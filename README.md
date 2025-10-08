@@ -1,2 +1,3 @@
 # SQL_Analyst_Projects
-here is where i take some excel files and respond to questions using MySQLWorkbench
+This is my SQL projects folder.
+Here is where I upload my sql files solving different questions based on a dataset.
