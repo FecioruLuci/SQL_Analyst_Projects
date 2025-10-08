@@ -107,3 +107,34 @@ FROM retailsales
 GROUP BY customer_id
 ORDER BY SUM(total_sale) DESC
 LIMIT 5;
+
+-- Q9 -- write a sql query to find the number of unique customers who purchased items from each category
+
+SELECT
+	category,
+	COUNT(distinct(customer_id))
+FROM retailsales
+GROUP BY category;
+
+-- Q10 -- write a sql query to create each shift and number of orders (example morning <= 12, afternoonbetween 12 and 17, evening  >17)
+WITH hour_sale
+AS
+(
+SELECT
+	sale_time as saletime,
+    quantiy as quantity,
+    CASE
+    WHEN HOUR(sale_time) <= 12 then "Morning"
+	WHEN HOUR(sale_time) in (12,17) then "afternoon"
+    ELSE "evening"
+    END as shift
+FROM retailsales
+)
+SELECT
+	COUNT(*) number_of_orders,
+	shift
+FROM hour_sale
+GROUP BY shift
+
+-- end of project --
+
