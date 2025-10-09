@@ -85,5 +85,44 @@ ADD CONSTRAINT fk_issues_status
 FOREIGN KEY (issued_id)
 REFERENCES issued_status(issued_id);
 
+
+-- Project Tasks
+
+-- Q1 -- Create a new book record -- "978-1-60129-456-2", "To Kill a Mockingbird", "Classic", 6.00, "yes", "Harper Lee", "J.B . Lippingcott & Co."
+
 SELECT *
-FROM return_status
+FROM books;
+
+INSERT INTO books(isbn,book_title,category,rental_price,status,author,publisher)
+VALUES 
+('978-1-60129-456-2', 'To Kill a Mockingbird', 'Classic', 6.00, 'yes', 'Harper Lee', 'J.B . Lippingcott & Co.');
+
+SELECT *
+FROM books
+WHERE isbn = '978-1-60129-456-2';
+-- checked and it indeed insert those values into books dateset
+
+-- Q2 -- Update an Existing Member's Address
+
+SELECT *
+FROM members;
+
+UPDATE members
+SET member_address = "Str. Hello"
+WHERE member_id = "C101";
+-- checked and updated the address
+
+-- Q3 -- Delete a Record from the Issued Status Table -- Objective: Delete the record with issued_id = 'IS121' from the issued_status table.
+
+SELECT *
+FROM issued_status
+WHERE issued_id = "IS121";
+-- checked and it's there
+
+DELETE FROM issued_status
+WHERE issued_id = "IS121";
+-- checked and it got removed
+
+
+
+
