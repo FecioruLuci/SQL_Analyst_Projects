@@ -122,7 +122,22 @@ WHERE issued_id = "IS121";
 DELETE FROM issued_status
 WHERE issued_id = "IS121";
 -- checked and it got removed
+-- Q4 -- Retrieve All Books Issued by a Specific Employee -- Objective: Select all books issued by the employee with emp_id = 'E101'.
 
+SELECT *
+FROM issued_status
+WHERE issued_emp_id = "E101";
+
+-- Q5 -- List Members Who Have Issued More Than One Book -- Objective: Find members who have issued more than one book.
+SELECT
+*
+FROM(
+SELECT
+	COUNT(*) as issuedbooks,
+    issued_member_id as issued_memberID
+FROM issued_status
+GROUP BY issued_member_id
+)t WHERE issuedbooks != 1
 
 
 
