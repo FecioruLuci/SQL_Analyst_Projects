@@ -137,7 +137,71 @@ SELECT
     issued_member_id as issued_memberID
 FROM issued_status
 GROUP BY issued_member_id
-)t WHERE issuedbooks != 1
+)t WHERE issuedbooks != 1;
+
+-- Q6 -- Create Summary Tables: Used CTAS to generate new tables based on query results - each book and total book_issued_cnt**
+DROP TABLE IF EXISTS book_counter;
+CREATE TABLE book_counter
+AS 
+	SELECT
+		COUNT(*) as issuedcounter,
+		book_title,
+        isbn
+	FROM books
+	AS b
+	JOIN issued_status as ist
+	ON b.isbn = ist.issued_book_isbn
+	GROUP BY isbn;
+    
+SELECT *
+FROM book_counter;
+-- i've dropped the table at first cause i though including isbn could be helpful. Now it looks better.
+
+-- Q7 -- Retrieve All Books in a Specific Category:
+
+SELECT *
+FROM books
+WHERE category = "Children";
+-- for example we take children we can switch whenever we want
+
+
+-- Q8 -- Find Total Rental Income by Category:
+
+SELECT
+	category,
+	SUM(rental_price) as total_income
+FROM books
+GROUP BY category;
+
+-- Q9 -- List Members Who Registered in the Last 180 Days:
+SELECT *
+FROM members
+WHERE reg_date >= CURDATE() - INTERVAL 180 day;
+-- We dont have any. When i do this project my current time is 2025/10/10 i'll try to add some values myself and check my query
+
+INSERT INTO members(member_id,member_name,member_address,reg_date)
+VALUES("C201","Birsan Lucian", "Str. Tudor", "2025-09-20"),
+("C202","Birsan Lucian2", "Str. Tudor2", "2025-10-03");
+-- And yes now it's working
+
+
+
+-- Q10 -- List Employees with Their Branch Manager's Name and their branch details:
+
+SELECT
+	*
+FROM employees AS e
+JOIN branch as b
+ON e.branch_id = b.branch_id
+JOIN employees as e2
+ON b.manager_id = e2.emp_id;
+
+-- Q11 -- Create a Table of Books with Rental Price Above a Certain Threshold:
+
+SELECT *
+FROM books
+
+
 
 
 
