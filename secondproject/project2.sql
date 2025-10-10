@@ -189,7 +189,10 @@ VALUES("C201","Birsan Lucian", "Str. Tudor", "2025-09-20"),
 -- Q10 -- List Employees with Their Branch Manager's Name and their branch details:
 
 SELECT
-	*
+	e.*,
+    b.branch_id,
+    b.manager_id,
+    e2.emp_name as branchmanager_name
 FROM employees AS e
 JOIN branch as b
 ON e.branch_id = b.branch_id
@@ -197,9 +200,28 @@ JOIN employees as e2
 ON b.manager_id = e2.emp_id;
 
 -- Q11 -- Create a Table of Books with Rental Price Above a Certain Threshold:
-
+-- i'll go for threshhold bigger thna 4
+CREATE TABLE booksthreshold
+	SELECT *
+	FROM books
+	where rental_price > 4;
+    
 SELECT *
-FROM books
+FROM booksthreshold
+ORDER BY rental_price ASC;
+
+-- Q12 -- Retrieve the List of Books Not Yet Returned
+
+SELECT
+	ist.issued_book_name
+FROM issued_status as ist
+LEFT JOIN return_status as rst
+ON ist.issued_id = rst.issued_id
+WHERE return_id is NULL
+
+
+
+
 
 
 
