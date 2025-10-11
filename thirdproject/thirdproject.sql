@@ -69,4 +69,43 @@ WHERE
 	and
 	duration = (SELECT MAX(duration) FROM netflix);
 
-	
+-- Q6 -- Find Content Added in the Last 5 Years
+
+SELECT
+	title,
+	daytime
+FROM(
+SELECT
+	title,
+    TO_DATE(date_added, 'Month DD, YYYY') AS daytime
+FROM netflix
+)t WHERE daytime >= CURRENT_DATE - INTERVAL '5 years';
+
+-- Q7 -- Find All Movies/TV Shows by Director 'Rajiv Chilaka'
+SELECT *
+FROM(
+SELECT
+	title,
+	UNNEST(STRING_TO_ARRAY(director, ',')) as new_director
+FROM netflix
+)t WHERE new_director = 'Rajiv Chilaka';
+
+
+-- Q8 -- List All TV Shows with More Than 5 Seasons
+
+SELECT *
+FROM netflix
+WHERE type = 'TV Show'
+	AND
+	SPLIT_PART(duration, ' ',1)::INT > 5;
+
+-- Q9 -- Count the Number of Content Items in Each Genre
+
+SELECT
+	UNNEST(STRING_TO_ARRAY(listed_in, ',')) as new_list,
+	COUNT(*)
+FROM netflix
+GROUP BY UNNEST(STRING_TO_ARRAY(listed_in, ','));
+
+
+
