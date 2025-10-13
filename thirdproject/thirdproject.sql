@@ -107,5 +107,78 @@ SELECT
 FROM netflix
 GROUP BY UNNEST(STRING_TO_ARRAY(listed_in, ','));
 
+-- Q10 -- Find each year and the average numbers of content release in India on netflix.
+SELECT 
+	*,
+	counter::numeric / 972 * 100 as average_numbers
+FROM(
+SELECT
+	release_year,
+	COUNT(*) as counter
+FROM netflix
+WHERE country = 'India'
+GROUP BY release_year
+)t ORDER BY counter DESC
+-- did a count of * filtered by coutnry and my total was 972 
+
+-- Q11 -- List All Movies that are Documentaries
+
+SELECT
+	DISTINCT(UNNEST(STRING_TO_ARRAY(listed_in, ',')))
+FROM netflix;
+
+SELECT *
+FROM netflix
+WHERE type = 'Movie'
+	AND listed_in LIKE '%Documentaries%';
+
+-- Q12 -- Find All Content Without a Director
+
+SELECT *
+FROM netflix
+WHERE director IS NULL;
+
+-- Q13 Find How Many Movies Actor 'Salman Khan' Appeared in the Last 10 Years
+
+SELECT *
+FROM netflix
+WHERE casts LIKE '%Salman Khan%'
+AND TO_DATE(date_added, 'MONTH DD, YYYY') >= (CURRENT_DATE - INTERVAL '10 years');
+
+
+-- Q14 -- Find the Top 10 Actors Who Have Appeared in the Highest Number of Movies Produced in India
+
+SELECT
+	UNNEST(STRING_TO_ARRAY(casts, ',')) as actors,
+	COUNT(*)
+FROM netflix
+WHERE country = 'India'
+AND type = 'Movie'
+GROUP BY UNNEST(STRING_TO_ARRAY(casts, ','))
+ORDER BY COUNT(*) DESC
+LIMIT 10;
+
+-- Q15 -- Categorize content as 'Bad' if it contains 'kill' or 'violence' and 'Good' otherwise. Count the number of items in each category.
+
+SELECT
+	DISTINCT(UNNEST(STRING_TO_ARRAY(listed_in, ','))) as genre
+FROM netflix;
+
+
+SELECT COUNT(*),
+Categoryy
+FROM(
+SELECT *,
+CASE WHEN description ILIKE '%KILL%' THEN 'Bad'
+WHEN description ILIKE '%Violence%' THEN 'Good'
+ELSE 'normal'
+END AS Categoryy
+FROM netflix
+)t GROUP BY Categoryy;
+-- checked and it's working
+
+
+
+
 
 
