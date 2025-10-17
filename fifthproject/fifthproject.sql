@@ -122,6 +122,109 @@ SELECT
 	s.avg_rent
 FROM firsttable as f
 JOIN secondtable as s
+ON f.city_name = s.city_name;
+
+-- Q9 -- Sales growth rate: Calculate the percentage growth (or decline) by each city in sales over different time periods (monthly).
+WITH firsttable
+AS
+(
+	SELECT
+		EXTRACT(MONTH FROM s.sale_date) as monthul,
+		EXTRACT(YEAR FROM s.sale_date) as yearr,
+		cit.city_name,
+		SUM(total) as total_sales
+	FROM sales as s
+	JOIN customers as c
+	ON s.customer_id = c.customer_id
+	JOIN city as cit
+	ON cit.city_id = c.city_id
+	GROUP BY 3,1,2
+	ORDER BY 3,2,1
+),
+
+secondtable AS
+(
+	SELECT 
+		monthul,
+		yearr,
+		city_name,
+		total_sales,
+		LAG(total_sales, 1) OVER(PARTITION BY city_name ORDER BY yearr,monthul) as nextmonthsales,
+		ROUND
+		((total_sales - LAG(total_sales, 1) OVER(PARTITION BY city_name ORDER BY yearr,monthul))::numeric / LAG(total_sales, 1) OVER(PARTITION BY city_name ORDER BY yearr,monthul)::numeric * 100,1) as growth
+		
+	FROM firsttable
+)
+
+SELECT
+	monthul,
+	yearr,
+	city_name,
+	nextmonthsales,
+	growth
+FROM secondtable
+WHERE growth IS NOT NULL
+
+-- Q10 -- Identify top 3 city based on highest sales, return city name, total sale, total rent, total customers, estimated coffee consumer
+WITH firsttable
+AS
+(
+	SELECT
+		cit.city_name,
+		COUNT(DISTINCT s.customer_id) as uniquee,
+		ROUND(SUM(s.total)::numeric/COUNT(DISTINCT s.customer_id)::numeric,1) as averagee,
+		SUM(total) as total_sales
+	FROM city as cit
+	JOIN customers as c
+	ON cit.city_id = c.city_id
+	JOIN sales as s
+	ON s.customer_id = c.customer_id
+	GROUP BY 1
+),
+
+secondtable AS
+(
+	SELECT
+		cit.city_name,
+		cit.estimated_rent,
+		COUNT(DISTINCT s.customer_id) as count_cust,
+		ROUND(cit.estimated_rent::numeric / COUNT(DISTINCT s.customer_id)::numeric,1) as avg_rent
+	FROM city as cit
+	JOIN customers as c
+	ON cit.city_id = c.city_id
+	JOIN sales as s
+	ON s.customer_id = c.customer_id
+	GROUP BY 1,2
+),
+
+thirdtable as
+(
+	SELECT
+		city_name,
+		ROUND
+		((population * 0.25) / 1000000,3) as est_coffee_consumer_mills
+	FROM city
+)
+
+SELECT
+	f.city_name as city_name,
+	total_sales,
+	estimated_rent as total_rent,
+	count_cust as total_customers,
+	est_coffee_consumer_mills,
+	ROUND
+	((estimated_rent / count_cust)::numeric,1) as rent_per_customer
+FROM firsttable as f
+JOIN secondtable as s
 ON f.city_name = s.city_name
-	
-	
+JOIN thirdtable as t
+ON t.city_name = f.city_name
+ORDER BY total_sales DESC
+
+-- pune total sales(mills) 1.2 total_customer 52 and rent/customer 294
+-- jaipur total sales(mills) 0.8 total_customer 69 and rent/customer 156
+-- delhi total sales(mills) 0.75 total_customer 68 and rent/customer 330
+
+-- jaipur has bigger sales with same customers and 2 times less rent so jaipur > delhi
+-- pune has 1.2 total sales with a bit less customers and almost double rent per customer
+-- if u want a business pune for sure if u wanna live there as acustomer jaipur for sure
