@@ -254,8 +254,13 @@ This analysis provides a comprehensive view of Netflix's content and can help in
 
 This project is part of my portfolio, showcasing the SQL skills essential for data analyst roles. Thank you for watching.
 
+- **LinkedIn**: [[Connect with me professionally]) -    https://www.linkedin.com/in/birsanlucian1/
+- **E-Mail**: birsan.lucian04@gmail.com
+
+
 
 
 - **LinkedIn**: (https://www.linkedin.com/in/birsanlucian1/)
 - **E-mail**: (birsan.lucian04@gmail.com)
+
 
