@@ -304,8 +304,9 @@ This project demonstrates the application of SQL skills in creating and managing
 
 This project is part of my portfolio, showcasing the SQL skills essential for data analyst roles. Thank you for watching.
 
-- **LinkedIn**: [https://www.linkedin.com/in/birsanlucian1/)
+- **LinkedIn**: https://www.linkedin.com/in/birsanlucian1/
 - **E-Mail**: birsan.lucian04@gmail.com
+
 
 
 
