@@ -260,7 +260,3 @@ This project is part of my portfolio, showcasing the SQL skills essential for da
 
 
 
-- **LinkedIn**: (https://www.linkedin.com/in/birsanlucian1/)
-- **E-mail**: (birsan.lucian04@gmail.com)
-
-
