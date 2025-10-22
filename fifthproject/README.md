@@ -238,7 +238,8 @@ This project serves as a comprehensive introduction to SQL for data analysts, co
 
 This project is part of my portfolio, showcasing the SQL skills essential for data analyst roles. Thank you for watching.
 
-- **LinkedIn**: [[Connect with me professionally](https://www.linkedin.com/in/najirr](https://github.com/FecioruLuci))
-- **Email**: birsan.lucian04@gmail.com
+- **LinkedIn**: [[Connect with me professionally]) -    https://www.linkedin.com/in/birsanlucian1/
+- **E-Mail**: birsan.lucian04@gmail.com
+
 
 
