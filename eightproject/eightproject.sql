@@ -189,3 +189,60 @@ FROM goldfactsales as gs
 JOIN golddimcustomers as gc
 ON gs.customer_key = gc.customer_key
 GROUP BY gc.country;
+
+-- Which 5 produts worst-performing products in terms of sales
+
+WITH table1
+AS
+(
+SELECT 
+	gp.product_name,
+	SUM(gs.sales_amount) as total_rev
+FROM goldfactsales as gs
+LEFT JOIN golddimproducts as gp
+ON gs.product_key = gp.product_key
+GROUP BY gp.product_name
+),
+
+table2
+AS
+(
+SELECT 
+	table1.product_name,
+	table1.total_rev,
+	RANK () OVER(ORDER BY table1.total_rev ASC) as ranking
+FROM table1
+)
+
+SELECT 
+	table2.product_name,
+	table2.total_rev,
+	table2.ranking
+FROM table2
+WHERE ranking <= 5;
+
+-- Find the top 10 customers who have generated the highest revenue
+
+SELECT
+	gs.customer_key,
+	SUM(gs.sales_amount)
+FROM goldfactsales as gs
+LEFT JOIN golddimcustomers as gc
+ON gs.customer_key = gc.customer_key
+GROUP BY 1
+ORDER BY SUM(gs.sales_amount) DESC
+LIMIT 10
+-- Find the 3 customers with the fewers orders placed
+
+SELECT
+	gs.customer_key,
+	gc.first_name,
+	gc.last_name,
+	COUNT(DISTINCT gs.order_number) as total_orders
+FROM goldfactsales as gs
+LEFT JOIN golddimcustomers as gc
+ON gs.customer_key = gc.customer_key
+GROUP BY 1,2,3
+ORDER BY 4 ASC
+
+	
