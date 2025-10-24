@@ -306,4 +306,46 @@ SELECT
 	ROUND(AVG(total_sales) OVER(PARTITION BY namee)) as average,
 	total_sales - ROUND(AVG(total_sales) OVER(PARTITION BY namee)) as avg_difference
 FROM table1
-ORDER BY 2,1
+ORDER BY 2,1;
+
+-- Which category contribute the most to overall sales
+WITH table1
+AS
+(
+SELECT
+	gp.category,
+	SUM(gs.sales_amount) as total_sales
+FROM goldfactsales as gs
+LEFT JOIN golddimproducts as gp
+ON gs.product_key = gp.product_key
+GROUP BY 1
+)
+
+SELECT
+	table1.category,
+	table1.total_sales,
+	SUM(table1.total_sales) OVER(),
+	CONCAT(ROUND(table1.total_sales / SUM(table1.total_sales) OVER() * 100,1), '%') as percentage
+FROM table1;
+
+-- Segment products into cost ranges and count how many products fall into each segment
+WITH table1
+AS
+(
+SELECT
+	product_name,
+	product_key,
+	cost,
+	CASE
+	WHEN cost < 500 THEN 'LOW'
+	WHEN cost > 500 AND cost < 1000 THEN 'MEDIUM'
+	ELSE 'HIGH'
+	END AS segment
+FROM golddimproducts
+)
+
+SELECT
+	segment,
+	COUNT(product_key)
+FROM table1
+GROUP BY 1
