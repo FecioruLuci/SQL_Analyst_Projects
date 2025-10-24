@@ -243,6 +243,67 @@ FROM goldfactsales as gs
 LEFT JOIN golddimcustomers as gc
 ON gs.customer_key = gc.customer_key
 GROUP BY 1,2,3
-ORDER BY 4 ASC
+ORDER BY 4 ASC;
 
-	
+-- Analyze the sales performance over time
+
+SELECT
+	order_date,
+	SUM(sales_amount) as total_sales
+FROM goldfactsales
+GROUP BY 1
+ORDER BY 1 ASC;
+
+-- Analyze the sales performance and number of customers over years
+
+SELECT 
+	EXTRACT(YEAR FROM order_date) as yearr,
+	SUM(sales_amount) as total_sales,
+	COUNT(DISTINCT customer_key) as total_cust
+FROM goldfactsales
+GROUP BY 1
+ORDER BY 1 ASC;
+
+-- Calculate the total sales for each month
+-- Calculate the running total sales over time
+
+SELECT 
+	total_sales,
+	yearr,
+	monthh,
+	SUM(total_sales) OVER(PARTITION BY yearr,monthh ORDER BY yearr,monthh ASC)
+FROM(
+SELECT
+	SUM(sales_amount) as total_sales,
+	EXTRACT(YEAR FROM order_date) as yearr,
+	EXTRACT(MONTH FROM order_date) as monthh
+FROM goldfactsales
+GROUP BY 2,3
+ORDER BY 2,3 ASC
+)t;
+
+-- Analyze the yearly performance of products by comapring each product's sales to both its average sales performance and the previous year's sale
+
+WITH table1
+AS
+(
+SELECT
+	EXTRACT(YEAR FROM order_date) as year_date,
+	gp.product_name as namee,
+	SUM(sales_amount) as total_sales
+FROM goldfactsales as gs
+LEFT JOIN golddimproducts as gp
+ON gs.product_key = gp.product_key
+GROUP BY 1,2
+)
+
+SELECT
+	year_date,
+	namee,
+	total_sales,
+	LAG(total_sales) OVER(PARTITION BY namee ORDER BY year_date) as last_year_total_sale,
+	total_sales - LAG(total_sales) OVER(PARTITION BY namee ORDER BY year_date) as last_year_total_sale_diff,
+	ROUND(AVG(total_sales) OVER(PARTITION BY namee)) as average,
+	total_sales - ROUND(AVG(total_sales) OVER(PARTITION BY namee)) as avg_difference
+FROM table1
+ORDER BY 2,1
