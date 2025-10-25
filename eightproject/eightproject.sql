@@ -348,4 +348,96 @@ SELECT
 	segment,
 	COUNT(product_key)
 FROM table1
+GROUP BY 1;
+
+-- Group customers into three segments based on their spending behavior 
+-- VIP: at least 12 months of history and spending more than 5000$
+-- Regular : at least 12 months of history and spending less than 5000$
+-- New: lifespan less than 12 months
+-- Select the total number of customers for each group
+
+SELECT
+	typee,
+	COUNT(*)
+FROM(
+SELECT 
+	gs.customer_key,
+	MIN(gs.order_date) as date_min,
+	MAX(gs.order_date) as date_max,
+	SUM(gs.price) as total_spending,
+	CASE
+	WHEN MAX(gs.order_date) - INTERVAL '12 MONTH' > MIN(gs.order_date) AND SUM(gs.price) > 5000 THEN 'VIP'
+	WHEN MAX(gs.order_date) - INTERVAL '12 MONTH' > MIN(gs.order_date) AND SUM(gs.price) < 5000 THEN 'REGULAR'
+	ELSE 'NEW'
+	END AS typee
+FROM goldfactsales as gs
+LEFT JOIN golddimcustomers as gc
+ON gs.customer_key = gc.customer_key
 GROUP BY 1
+)
+GROUP BY typee;
+
+-- Gathers essential fields such as names, ages, transaction details, segments(VIP,Regular,New) and age groups, total orders, total sales, 
+-- total quantity purchased, lifespan(in months), recency(months since last order), average order value, average monthly spend
+WITh table1 
+AS
+(
+SELECT
+	gs.order_number,
+	gs.product_key,
+	gs.sales_amount,
+	gs.quantity,
+	gs.customer_key,
+	gs.order_date,
+	gs.shipping_date,
+	gs.due_date,
+	gc.birthdate,
+	gc.customer_number,
+	CONCAT(gc.first_name, ' ', gc.last_name) as cust_name,
+	EXTRACT(YEAR FROM AGE(CURRENT_DATE, gc.birthdate)) as cust_age
+FROM goldfactsales as gs 
+LEFT JOIN golddimcustomers as gc
+ON gs.customer_key = gc.customer_key
+WHERE birthdate IS NOT NULL
+),
+table2
+AS
+(
+SELECT
+	customer_key,
+	customer_number,
+	cust_name,
+	cust_age,
+	MAX(order_date) as last_order,
+	SUM(sales_amount) as total_sales,
+	COUNT(DISTINCT order_number) as total_orders,
+	SUM(quantity) as total_quantity,
+	EXTRACT(YEAR FROM MAX(order_date)) * 12 + EXTRACT(MONTH FROM MAX(order_date)) - EXTRACT(YEAR FROM MIN(order_date)) * 12 - EXTRACT(MONTH FROM MIN(order_date)) as lifespan
+FROM table1
+GROUP BY 1,2,3,4
+ORDER BY 1 ASC
+)
+SELECT
+	customer_key,
+	customer_number,
+	cust_name,
+	cust_age,
+	total_sales,
+	total_orders,
+	total_quantity,
+	lifespan,
+	CASE
+	WHEN lifespan >= 12 AND total_sales > 5000 THEN 'VIP'
+	WHEN lifespan >= 12 AND total_sales < 5000 THEN 'REGULAR'
+	ELSE 'NEW'
+	END AS typee,
+	CASE
+	WHEN cust_age < 25 THEN 'YOUNG'
+	WHEN cust_age > 25 AND cust_age < 40 THEN 'ADULT'
+	ELSE 'OLD'
+	END AS typee2,
+	(EXTRACT(YEAR FROM CURRENT_DATE) * 12 + EXTRACT(MONTH FROM CURRENT_DATE)) - 
+	(EXTRACT(YEAR FROM last_order) * 12 + EXTRACT(MONTH FROM last_order)) as recency,
+	(total_sales/total_orders) as avg_order_value,
+	total_sales / 12 as mothly_spend
+FROM table2
