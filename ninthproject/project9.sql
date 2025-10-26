@@ -64,6 +64,8 @@ FROM pizzatable
 GROUP BY 2;
 
 -- Percentage sales by pizza category
+
+
 WITH table1
 AS
 (
@@ -77,3 +79,45 @@ SELECT
 FROM pizzatable as pt
 CROSS JOIN table1 as t
 GROUP BY 1, t.total_sales
+
+-- Same but for a specific month
+WITH table1
+AS
+(
+SELECT
+	SUM(total_price) as total_sales
+FROM pizzatable
+WHERE EXTRACT(MONTH FROM order_date) = 1
+)
+SELECT
+	pt.pizza_category,
+	ROUND((SUM(pt.total_price) * 100 / t.total_sales)::numeric,2) as Percentage
+FROM pizzatable as pt
+CROSS JOIN table1 as t
+WHERE EXTRACT(MONTH FROM order_date) = 1
+GROUP BY 1, t.total_sales;
+
+-- Percentage of sales by pizza size
+	SELECT
+		pizza_size,
+		ROUND(SUM(total_price)::numeric,1) as counter,
+		ROUND(
+		(SUM(total_price) * 100)::numeric / (SELECT SUM(total_price) FROM pizzatable)::numeric,2) as Percentagee
+	FROM pizzatable
+	--WHERE EXTRACT(QUARTER FROM order_date) = 1
+	GROUP BY 1;
+
+-- Top 5 best sellers by revenue, total quantity, and total orders
+
+SELECT
+	pizza_name,
+	SUM(total_price) as revenuue,
+	SUM(quantity) as total_quantity,
+	COUNT(DISTINCT order_id) as total_orders
+FROM pizzatable
+GROUP BY 1
+ORDER BY 1,2,3 DESC
+LIMIT 5
+
+
+
