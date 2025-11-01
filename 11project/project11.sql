@@ -240,3 +240,24 @@ SELECT
 FROM table1
 WHERE counter = promo_counter AND counter > 1
 
+-- what percent of customers were organically aquired in jan 2025. (placed first order without a promo code)
+with table1 
+AS
+(
+SELECT 
+	customer_code
+FROM orders
+WHERE promo_code_name IS NULL
+GROUP BY 1
+HAVING EXTRACT(MONTH FROM MIN(placed_at)) = 1
+)
+
+SELECT
+	COUNT(DISTINCT o1.customer_code) as total_cust,
+	(COUNT(DISTINCT t1.customer_code))::numeric / (COUNT(DISTINCT o1.customer_code))::numeric * 100 as percentagee
+FROM orders as o1
+LEFT JOIN table1 as t1
+ON o1.customer_code = t1.customer_code
+
+
+
