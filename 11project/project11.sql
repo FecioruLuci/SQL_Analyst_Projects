@@ -1,3 +1,4 @@
+
 CREATE TABLE orders (
     Order_id VARCHAR(20),
     Customer_code VARCHAR(20),
@@ -136,29 +137,72 @@ WITH table1
 AS
 (
 SELECT
-	count(DISTINCT customer_code) as counter,
-	EXTRACT(DAY FROM placed_at) as current_day,
-	EXTRACT(MONTH FROM placed_at) as current_month
+	count(*) as counter,
+	EXTRACT(DAY FROM placed_at) as current_day
 FROM orders
-GROUP BY 2,3
-ORDER BY 3,2 ASC
+GROUP BY 2
+ORDER BY 2 ASC
 )
 SELECT
-	current_day,
-	current_month,
 	counter,
+	current_day,
 	last_day,
-	ROUND((counter - last_day)::numeric / last_day * 100) as percentage
+	(current_day - last_day) / last
 FROM
 (
 SELECT
 	counter,
 	current_day,
-	current_month,
-	LAG(counter) OVER(ORDER BY current_month,current_day) as last_day
+	LAG(current_day) OVER(ORDER BY current_day) as last_day
 FROM table1
 )
 
-SELECT *
+-- Count of all the users who were acquired in jan 2025 and only placed one order in jan and did not place any other order
+SELECT
+	customer_code,
+	COUNT(*) as counter
 FROM orders
-ORDER BY placed_at ASC
+WHERE EXTRACT (YEAR FROM placed_at) = 2025
+	AND
+	EXTRACT (MONTH FROM placed_at) = 1
+	AND
+	customer_code NOT IN (SELECT
+	DISTINCT customer_code
+FROM orders
+WHERE not (EXTRACT (YEAR FROM placed_at) = 2025
+	AND
+	EXTRACT (MONTH FROM placed_at) = 1))
+GROUP BY 1
+HAVING COUNT(*) = 1
+
+-- List all the customers with no order in the last 7 days but were acquired one month ago with their first order on promo
+
+with table1
+AS
+(
+SELECT 
+	customer_code,
+	MAX(placed_at) as last_order,
+	MIN(placed_at) as min_order
+FROM orders
+GROUP BY 1
+)
+
+SELECT
+	t1.customer_code,
+	last_order,
+	min_order,
+	o1.promo_code_name
+FROM table1 as t1
+INNER JOIN orders as o1
+ON t1.customer_code = o1.customer_code
+	AND
+	t1.min_order = o1.placed_at
+WHERE promo_code_name IS NOT NULL
+	AND
+	last_order < CURRENT_DATE - INTERVAL '7 days'
+	AND
+	CURRENT_DATE - INTERVAL '1 month' > min_order
+
+
+
