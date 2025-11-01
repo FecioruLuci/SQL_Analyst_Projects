@@ -204,5 +204,39 @@ WHERE promo_code_name IS NOT NULL
 	AND
 	CURRENT_DATE - INTERVAL '1 month' > min_order
 
+-- growth team is planning to create a trigger that will target customers after their every third order with a personalized communication and they have asked u
+-- to create a query for this
+with table1
+AS
+(
+SELECT
+	*,
+	ROW_NUMBER() OVER(PARTITION BY customer_code ORDER BY placed_at) as counter
+FROM orders
+)
 
+SELECT *,
+	CASE
+	WHEN counter % 3 = 0 THEN 'personalized'
+	ELSE 'no'
+	END AS communication
+FROM table1
+WHERE counter % 3 = 0
+
+-- list of customers who have placed more than 1 order and all their order on a promo only
+with table1 
+AS
+(
+SELECT
+	customer_code,
+	COUNT(*) as counter,
+	COUNT(promo_code_name) as promo_counter
+FROM orders
+GROUP BY 1
+)
+
+SELECT
+	*
+FROM table1
+WHERE counter = promo_counter AND counter > 1
 
