@@ -47,3 +47,154 @@ GROUP BY 1
 SELECT *
 FROM table1
 WHERE total_spent >= (SELECT AVG(purchase_amount) FROM customerr)
+
+-- which are the top 5 products with the highest average review rating
+SELECT *
+FROM
+(
+SELECT
+	item_purchased,
+	ROUND(AVG(review_rating)::numeric,2) as AVG_rating
+FROM customerr
+GROUP BY 1
+)
+ORDER BY AVG_rating DESC
+LIMIT 5
+
+-- compare the average purchase ammounts between standard and express shipping
+
+SELECT 
+	shipping_type,
+	ROUND(AVG(purchase_amount)::numeric,2) as AVG_purchase
+FROM customerr
+WHERE shipping_type = 'Standard' OR
+	shipping_type = 'Express'
+GROUP BY 1
+
+-- Do subscribed customers spend more? Compare average spend and total revenue
+
+SELECT 
+	subscription_status,
+	SUM(purchase_amount) as total_revenue,
+	ROUND(AVG(purchase_amount),2) as avg_spend
+FROM customerr
+GROUP BY 1
+
+-- which 5 products have the highest percentage purchases with discounts applied
+
+SELECT 
+	item_purchased,
+	ROUND( 100 * SUM(CASE
+	WHEN discount_applied = 'Yes' THEN 1
+	ELSE 0
+	END),2)/ COUNT(*) AS
+	nr_of_disc_products
+FROM customerr
+GROUP BY 1
+ORDER BY nr_of_disc_products DESC
+LIMIT 5
+
+-- segment customersinto New, Returning, and Loyal based on their total number of previous purchases, 
+-- and show the count of each segment
+with table1
+AS
+(
+SELECT
+	customer_id,
+	previous_purchases,
+	CASE
+	WHEN previous_purchases <= 10 THEN 'New'
+	WHEN previous_purchases > 10 AND previous_purchases <= 30 THEN 'Returning'
+	ELSE 'Loyal'
+	END AS segmentation
+FROM customerr
+)
+
+SELECT 
+	--customer_id,
+	segmentation,
+	/*previous_purchases,
+	segmentation,
+	COUNT(segmentation) OVER(PARTITION BY segmentation)*/
+	COUNT(*) as counter
+FROM table1
+GROUP BY segmentation
+ORDER BY counter
+
+-- what is the top 3 most purchased products within each category
+with table1
+AS
+(
+SELECT 
+	category,
+	item_purchased,
+	COUNT(*) as total_orders,
+	ROW_NUMBER() OVER(PARTITION BY category ORDER BY COUNT(*) DESC) as ranking
+FROM customerr
+GROUP BY 1,2
+)
+
+SELECT
+	*
+FROM table1
+WHERE ranking <= 3
+
+-- are customerse who are repeat buyers (more than 5 previous purchases) also likely to subscribe?
+-- count customers base of subscription status while they have more than 5 purchases
+SELECT
+	subscription_status,
+	COUNT(customer_id) as counter
+FROM customerr
+WHERE previous_purchases > 5
+GROUP BY 1
+
+-- we have a lot more of customers who didn't subscribe so they are most likely to not subscribe(those with more than 5 previous purchases)
+
+-- what is the revenue contribution of each age group
+
+-- age group made by me in python
+SELECT
+	age_group,
+	SUM(purchase_amount) as total_rev
+FROM customerr
+GROUP BY 1
+ORDER BY 2 DESC
+
+-- directly in postgresql
+with table1
+AS
+(
+SELECT
+	age,
+	purchase_amount,
+	CASE
+	WHEN age <= 25 THEN 'Young Guy'
+	WHEN age >= 25 AND age <= 40 THEN 'Adult'
+	ELSE 'Old Man'
+	END AS Category
+FROM customerr
+)
+
+SELECT
+	Category,
+	SUM(purchase_amount) as total_rev
+FROM table1
+GROUP BY 1
+
+-- by age
+with table1
+AS
+(
+SELECT
+	age,
+	SUM(purchase_amount) as total_rev_per_age,
+	(SELECT SUM(purchase_amount) FROM customerr) as total_rev
+FROM customerr
+GROUP BY 1
+)
+
+SELECT
+	age,
+	--ROUND(total_rev_per_age::numeric / total_rev::numeric * 100,2) as percentagee
+	total_rev_per_age
+FROM table1
