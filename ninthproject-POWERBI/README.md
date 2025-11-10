@@ -122,5 +122,6 @@ This project provides a data-driven overview of pizza sales performance, highlig
 
 ## 📫 Connect with Me
 
-   LinkedIn: Connect with me professionally
+   LinkedIn: [Connect with me professionally](https://www.linkedin.com/in/birsanlucian1/)
    E-Mail: birsan.lucian04@gmail.com
+
