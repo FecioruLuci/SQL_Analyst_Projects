@@ -32,53 +32,95 @@ SELECT ROUND(SUM(total_price)) AS total_revenue FROM pizzatable;
 SELECT ROUND((SUM(total_price) / COUNT(DISTINCT order_id))::numeric, 2) AS AVG_ORDER
 FROM pizzatable;
 ```
-## 📈 Product and Customer Performance
 
-1. Identified the **top 10 customers generating the highest revenue**.  
-2. Identified the **3 customers with the fewest orders**.  
-3. Determined the **5 worst-performing products** based on sales revenue.  
-4. Analyzed **sales performance over time** by day, month, and year.  
-5. Compared each product’s **yearly sales** to its **average sales** and **previous year’s sales** to identify trends.  
-6. Determined **categories contributing most to overall sales** and their **percentage share**.  
-7. Segmented products into **cost ranges** (`LOW`, `MEDIUM`, `HIGH`) and counted products in each segment.  
+## 3.Total Pizzas Sold
+```sql
+SELECT SUM(quantity) AS Pizzas_Sold FROM pizzatable;
+```
 
----
+## 4.Total Orders
+```sql
+SELECT COUNT(DISTINCT order_id) AS Total_Orders FROM pizzatable;
+```
 
-## 👥 Customer Segmentation
+## 5.Average Pizzas per Order
+```sql
+SELECT ROUND((SUM(quantity)::numeric / COUNT(DISTINCT order_id))::numeric, 2)
+AS AVG_Pizza_Order FROM pizzatable;
+```
 
-1. Grouped customers into three segments based on **spending behavior and lifespan**:  
+## Sales Trends
 
-   - **VIP:** ≥12 months of history and total spending > $5000  
-   - **Regular:** ≥12 months of history and total spending < $5000  
-   - **New:** lifespan < 12 months  
+## 1.Daily Trend of Orders
+```sql
+SELECT COUNT(DISTINCT order_id), TO_CHAR(order_date, 'Day')
+FROM pizzatable
+GROUP BY 2;
+```
 
-2. Computed additional customer metrics:  
+## 2.Monthly Trend of Orders
+```sql
+SELECT COUNT(DISTINCT order_id), TO_CHAR(order_date, 'Month')
+FROM pizzatable
+GROUP BY 2;
+```
 
-   - **Age group:** `YOUNG (<25)`, `ADULT (25–40)`, `OLD (>40)`  
-   - **Total orders and total sales per customer**  
-   - **Total quantity purchased**  
-   - **Lifespan in months** (time between first and last order)  
-   - **Recency:** months since last order  
-   - **Average order value** and **average monthly spend**  
+## 🧀 Category and Size Performance
 
----
+## 1.Percentage of Sales by Pizza Category
+```sql
+WITH total AS (
+    SELECT SUM(total_price) AS total_sales FROM pizzatable
+)
+SELECT pizza_category,
+       ROUND((SUM(total_price) * 100 / total.total_sales)::numeric, 2) AS Percentage
+FROM pizzatable, total
+GROUP BY pizza_category, total.total_sales;
+```
+
+## 2.Percentage of Sales by Pizza Size
+```sql
+SELECT pizza_size,
+       ROUND(SUM(total_price)::numeric, 1) AS Total_Sales,
+       ROUND((SUM(total_price) * 100 / (SELECT SUM(total_price) FROM pizzatable))::numeric, 2)
+       AS Percentage
+FROM pizzatable
+GROUP BY pizza_size;
+```
+
+## 🏆 Top Performers
+
+## Top 5 Best-Selling Pizzas by revenue, quantity, and total orders:
+```sql
+SELECT pizza_name,
+       SUM(total_price) AS revenue,
+       SUM(quantity) AS total_quantity,
+       COUNT(DISTINCT order_id) AS total_orders
+FROM pizzatable
+GROUP BY pizza_name
+ORDER BY revenue DESC
+LIMIT 5;
+```
+
 
 ## 📌 Summary
 
-This project provides a comprehensive overview of **sales and customer behavior**, offering actionable insights for:  
+This project provides a data-driven overview of pizza sales performance, highlighting:
 
-- **Marketing strategies**  
-- **Product management**  
-- **Customer relationship management**  
+   -Revenue distribution across categories and sizes
 
-By combining transaction data with customer and product attributes, the analysis enables **data-driven decision-making** to maximize revenue and improve customer engagement.  
+   -Daily and monthly sales trends
 
-This project is part of my portfolio, showcasing the **SQL skills essential for data analyst roles**.  
+   -Customer ordering behavior insights (AOV, average pizzas per order)
 
----
+   -Top-selling products and performance breakdowns
+
+## 🧰 Tech Stack
+
+   SQL (PostgreSQL / MySQL compatible)
+   Data Visualization (Power BI / Tableau optional next step)
 
 ## 📫 Connect with Me
 
-- **LinkedIn:** [Connect with me professionally](https://www.linkedin.com/in/birsanlucian1/)  
-- **E-Mail:** birsan.lucian04@gmail.com  
-
+   LinkedIn: Connect with me professionally
+   E-Mail: birsan.lucian04@gmail.com
