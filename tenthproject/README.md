@@ -1,119 +1,169 @@
-## 🍕 Pizza Sales Analysis Project
+## 🚗 BMW Sales & Market Analysis Project
 
-This project focuses on exploring and analyzing a pizza sales dataset to uncover insights about revenue trends, customer ordering behavior, and product performance. The analysis is performed using SQL to calculate key performance metrics and visualize patterns across categories, sizes, and time periods.
+This project focuses on exploring and analyzing a BMW vehicle dataset to uncover insights into pricing trends, market performance, and vehicle characteristics across different regions, years, and categories.
+
+The analysis was performed using SQL, and complementary visual dashboards were built in Power BI to visualize key findings.
 
 ---
 
 ## 📊 Data Preparation
 
-Created a main table named pizzatable, containing detailed transactional data with the following fields:
+1.Created a main table named bmwtable containing detailed information about each BMW vehicle, including:
 
-pizza_id, order_id, pizza_name_id, quantity, order_date, order_time,
-unit_price, total_price, pizza_size, pizza_category,
-pizza_ingredients, pizza_name.
+Model, Year, Region, Color, Fuel_Type, Transmission,
+Engine_Size_L, Mileage_KM, Price_USD, Sales_Volume, Sales_Classification.
 
-Ensured data integrity by defining appropriate data types and primary keys.
+2.Defined appropriate data types and ensured a clean structure using CREATE TABLE and SELECT * checks.
 
-Verified data consistency using SELECT * FROM pizzatable; before proceeding with analysis. 
+3.Verified that the dataset supports multi-dimensional analysis across regions, time, and vehicle specifications.
 
 ---
 
-## 🔍 Exploratory Analysis
+## 🔍 Key Analytical Insights
+## .Pricing Analysis
 
-Using SQL queries, several key business metrics were calculated:
-
-## 1.Total Revenue
-
+## 1.Average price per fuel type:
 ```sql
-SELECT ROUND(SUM(total_price)) AS total_revenue FROM pizzatable;
-```
-## 2.Average Order Value (AOV)
-```sql
-SELECT ROUND((SUM(total_price) / COUNT(DISTINCT order_id))::numeric, 2) AS AVG_ORDER
-FROM pizzatable;
+SELECT fuel_type, ROUND(AVG(price_usd)::numeric,2) AS average_price
+FROM bmwtable
+GROUP BY fuel_type;
 ```
 
-## 3.Total Pizzas Sold
+## 2.Average price by transmission (for engines > 2L):
 ```sql
-SELECT SUM(quantity) AS Pizzas_Sold FROM pizzatable;
+SELECT transmission, ROUND(AVG(price_usd)::numeric,2) AS average_price
+FROM bmwtable
+WHERE engine_size_l > 2
+GROUP BY transmission;
 ```
 
-## 4.Total Orders
+## Regional and Model Performance
+
+## 1.Total cars by region:
 ```sql
-SELECT COUNT(DISTINCT order_id) AS Total_Orders FROM pizzatable;
+SELECT region, COUNT(*) AS total_cars FROM bmwtable GROUP BY region;
 ```
 
-## 5.Average Pizzas per Order
+## 2.Top 3 models by sales volume in each region:
 ```sql
-SELECT ROUND((SUM(quantity)::numeric / COUNT(DISTINCT order_id))::numeric, 2)
-AS AVG_Pizza_Order FROM pizzatable;
+WITH ranked AS (
+    SELECT model, region, sales_volume,
+           ROW_NUMBER() OVER(PARTITION BY region ORDER BY sales_volume DESC) AS ranking
+    FROM bmwtable
+)
+SELECT * FROM ranked WHERE ranking <= 3;
 ```
 
-## Sales Trends
+## Color and Sales Behavior
 
-## 1.Daily Trend of Orders
-```sql
-SELECT COUNT(DISTINCT order_id), TO_CHAR(order_date, 'Day')
-FROM pizzatable
-GROUP BY 2;
-```
-
-## 2.Monthly Trend of Orders
-```sql
-SELECT COUNT(DISTINCT order_id), TO_CHAR(order_date, 'Month')
-FROM pizzatable
-GROUP BY 2;
-```
-
-## 🧀 Category and Size Performance
-
-## 1.Percentage of Sales by Pizza Category
+## 1.Percentage of red cars per classification and region:
 ```sql
 WITH total AS (
-    SELECT SUM(total_price) AS total_sales FROM pizzatable
+    SELECT sales_classification, region, COUNT(*) AS total_counter
+    FROM bmwtable GROUP BY 1,2
+),
+red AS (
+    SELECT sales_classification, region, COUNT(*) AS red_counter
+    FROM bmwtable WHERE color = 'Red' GROUP BY 1,2
 )
-SELECT pizza_category,
-       ROUND((SUM(total_price) * 100 / total.total_sales)::numeric, 2) AS Percentage
-FROM pizzatable, total
-GROUP BY pizza_category, total.total_sales;
+SELECT t.sales_classification, t.region,
+       ROUND((r.red_counter::numeric / t.total_counter::numeric) * 100,1) AS percentage_of_red_cars
+FROM total t LEFT JOIN red r
+ON t.region = r.region AND t.sales_classification = r.sales_classification;
 ```
 
-## 2.Percentage of Sales by Pizza Size
+## Time-Based Insights
+
+## 1.Year-over-Year growth in average price by region:## Sales Trends
 ```sql
-SELECT pizza_size,
-       ROUND(SUM(total_price)::numeric, 1) AS Total_Sales,
-       ROUND((SUM(total_price) * 100 / (SELECT SUM(total_price) FROM pizzatable))::numeric, 2)
-       AS Percentage
-FROM pizzatable
-GROUP BY pizza_size;
+WITH yearly AS (
+    SELECT year, region,
+           ROUND(AVG(price_usd)::numeric,1) AS average_price,
+           ROUND(LAG(AVG(price_usd)) OVER (PARTITION BY region ORDER BY year),1) AS last_year
+    FROM bmwtable GROUP BY 1,2
+)
+SELECT year, region, average_price, last_year,
+       (average_price - last_year) / last_year * 100 AS growth
+FROM yearly WHERE last_year IS NOT NULL;
 ```
 
-## 🏆 Top Performers
-
-## Top 5 Best-Selling Pizzas by revenue, quantity, and total orders:
+## 2.Top 3 models that appreciated the most in value (used market):
 ```sql
-SELECT pizza_name,
-       SUM(total_price) AS revenue,
-       SUM(quantity) AS total_quantity,
-       COUNT(DISTINCT order_id) AS total_orders
-FROM pizzatable
-GROUP BY pizza_name
-ORDER BY revenue DESC
-LIMIT 5;
+WITH yearly AS (
+    SELECT year, model,
+           ROUND(AVG(price_usd)) AS average_price,
+           ROUND(LAG(AVG(price_usd)) OVER(PARTITION BY model ORDER BY year)) AS last_year
+    FROM bmwtable GROUP BY 1,2
+)
+SELECT year, model, average_price, last_year,
+       (average_price - last_year) / last_year * 100 AS appreciation
+FROM yearly
+WHERE last_year IS NOT NULL
+ORDER BY year DESC, appreciation DESC;
 ```
 
+## Performance by Specifications
+
+## 1.Average price & sales by fuel type and transmission:
+```sql
+SELECT fuel_type, transmission,
+       ROUND(AVG(price_usd)::numeric,2) AS avg_price,
+       ROUND(AVG(sales_volume)::numeric,2) AS avg_sales
+FROM bmwtable GROUP BY fuel_type, transmission;
+```
+
+## 2.Average mileage by engine size and region:
+```sql
+SELECT engine_size_l, region, ROUND(AVG(mileage_km)::numeric) AS avg_mileage
+FROM bmwtable GROUP BY 1,2 ORDER BY 2,1;
+```
+
+## 3.Color distribution by sales classification:
+```sql
+SELECT sales_classification, color, COUNT(color) AS color_distrib
+FROM bmwtable GROUP BY 1,2;
+```
+
+## Market Comparison
+
+## 1.Price difference vs. regional average:
+```sql
+WITH region_avg AS (
+    SELECT region, ROUND(AVG(price_usd)::numeric) AS avg_price
+    FROM bmwtable GROUP BY 1
+),
+model_avg AS (
+    SELECT model, region, ROUND(AVG(price_usd)::numeric) AS price_model
+    FROM bmwtable GROUP BY 1,2
+)
+SELECT m.model, m.region, m.price_model, r.avg_price,
+       (m.price_model - r.avg_price) AS price_diff
+FROM region_avg r
+JOIN model_avg m ON r.region = m.region
+ORDER BY m.region;
+```
+## 📊 Power BI Visualization
+
+After computing the main KPIs and insights using SQL, I imported the results into Power BI to create a set of interactive dashboards, including:
+
+## -Average Price by Fuel Type.
+## -Number of car in each region.
+## -Average Price by transmission.
+## -Number of color distribution by sales classification.
+
+These visuals helped transform complex data into clear business insights for performance tracking and strategic decisions.
 
 ## 📌 Summary
 
-This project provides a data-driven overview of pizza sales performance, highlighting:
+This project provides a comprehensive look at BMW’s market performance, combining SQL-based analysis and Power BI visualization to deliver insights into:
 
-   -Revenue distribution across categories and sizes
+## Pricing dynamics
+## Market segmentation
+## Model appreciation trends
+## Regional sales behavior
+## Color and design preferences
 
-   -Daily and monthly sales trends
-
-   -Customer ordering behavior insights (AOV, average pizzas per order)
-
-   -Top-selling products and performance breakdowns
+The project demonstrates advanced SQL analysis skills and business-oriented data storytelling — essential for data analyst and BI roles.
 
 ## 🧰 Tech Stack
 
@@ -125,5 +175,6 @@ This project provides a data-driven overview of pizza sales performance, highlig
    LinkedIn: [Connect with me professionally](https://www.linkedin.com/in/birsanlucian1/)
    
    E-Mail: birsan.lucian04@gmail.com
+
 
 
