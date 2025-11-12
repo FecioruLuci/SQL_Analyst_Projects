@@ -174,4 +174,121 @@ SELECT
     AVG(ship_date - order_date) AS avg_shipping_days
 FROM store;
 
+-- Which year had the highest total sales?
 
+SELECT
+	EXTRACT(YEAR FROM order_date),
+	ROUND(SUM(sales)::numeric,1) AS total_sales
+FROM store
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 1
+
+-- What is the distribution of orders across customer segments?
+
+SELECT
+	segment,
+	category,
+	COUNT(order_id)
+FROM store
+GROUP BY 1,2
+ORDER BY 1
+
+-- Is there a correlation between discount and profit?
+
+SELECT
+	ROUND(CORR(discount, profit)::numeric,1)
+FROM store
+
+-- Identify the products with total losses (profit < 0) and find the top 5 least profitable ones.
+SELECT *
+FROM
+(
+SELECT
+	product_id,
+	product_name,
+	SUM(profit),
+	RANK() OVER(ORDER BY SUM(profit) ASC) AS ranking
+FROM store
+GROUP BY 1,2
+HAVING SUM(profit) < 0
+)
+WHERE ranking <= 5
+
+-- Calculate monthly revenue and analyze whether sales are trending upward or downward.
+WITH table1
+AS
+(
+SELECT
+	EXTRACT(MONTH FROM order_date) AS monthh,
+	ROUND(SUM(sales)::numeric,1) AS total_rev
+FROM store
+GROUP BY 1
+),
+table2
+AS
+(
+SELECT
+	table1.monthh AS monthh,
+	table1.total_rev AS current_month,
+	LAG(table1.total_rev) OVER(ORDER BY table1.monthh ASC) AS last_month
+FROM table1
+)
+
+SELECT
+	monthh,
+	last_month,
+	current_month,
+	ROUND((current_month - last_month) / last_month * 100,1) AS perc_growth,
+	CASE
+	WHEN (current_month - last_month) / last_month * 100 > 0 THEN 'UP'
+	WHEN (current_month - last_month) / last_month * 100 < 0 THEN 'DOWN'
+	ELSE 'NULL'
+	END AS segmentation
+FROM table2
+
+-- Identify loyal customers — those who placed orders in at least 3 different years.
+with table1
+AS
+(
+SELECT
+	customer_id,
+	EXTRACT(YEAR FROM order_date) as yearr,
+	COUNT(*) AS counter
+FROM store
+GROUP BY 1,2
+ORDER BY 1
+)
+
+SELECT
+	DISTINCT customer_id
+FROM(
+SELECT
+	*,
+	RANK () OVER(PARTITION BY table1.customer_id ORDER BY yearr) AS ranking
+FROM table1
+)
+WHERE ranking >= 3
+
+-- Analyze whether discounts negatively impact profit.
+
+SELECT
+	ROUND(CORR(discount,profit)::numeric,1)
+FROM store
+
+-- Calculate each segment’s contribution to total profit (as a percentage).
+WITH table1
+AS
+(
+SELECT
+	segment,
+	SUM(profit) AS total_profit
+FROM store
+GROUP BY 1
+)
+
+SELECT
+	table1.segment,
+	total_profit,
+	ROUND((total_profit / (SELECT SUM(profit) FROM store))::numeric * 100,1) As percentage
+FROM table1
