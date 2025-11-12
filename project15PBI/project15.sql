@@ -292,3 +292,73 @@ SELECT
 	total_profit,
 	ROUND((total_profit / (SELECT SUM(profit) FROM store))::numeric * 100,1) As percentage
 FROM table1
+
+-- Find the average shipping time per region and correlate it 
+-- with satisfaction (assume satisfaction decreases as delivery time increases).
+with table1
+AS
+(
+SELECT
+	region,
+	ROUND(AVG(ship_date - order_date),1),
+	ROUND(1 / AVG(ship_date - order_date)::numeric,3) AS satisfaction
+FROM store
+GROUP BY 1
+)
+
+SELECT
+	CORR(ship_date - order_date, t1.satisfaction)
+FROM store as s
+JOIN table1 as t1
+ON s.region = t1.region
+
+-- Detect products with high sales but low profit margins.
+SELECT *
+FROM
+(
+SELECT
+	product_id,
+	product_name,
+	COUNT(product_id),
+	ROUND(SUM(sales)::numeric,1) as total_sales_per_product,
+	SUM(profit) / SUM(sales) AS profit_margin
+FROM store
+GROUP BY 1,2
+HAVING COUNT(product_id) >= 5
+)
+
+WHERE total_sales_per_product > 
+(SELECT AVG(total_sales_per_product) FROM 
+(SELECT SUM(sales) AS total_sales_per_product FROM store GROUP BY product_id))
+ORDER BY profit_margin ASC
+
+-- Estimate the total profit lost due to discounts (compare actual profit vs. profit without discounts).
+
+SELECT
+    ROUND(SUM((profit / (1 - discount)) - profit)::numeric, 2) AS total_profit_lost
+FROM store
+WHERE discount > 0
+
+-- Create a category × region matrix showing total profit and highlight underperforming areas.
+with table1
+AS
+(
+SELECT
+	region,
+	category,
+	ROUND(SUM(profit)::numeric,1) AS total_profit
+FROM store
+GROUP BY 1,2
+ORDER BY 1
+)
+
+SELECT
+	table1.region,
+	table1.category,
+	table1.total_profit,
+	ROUND(AVG(table1.total_profit) OVER(),1),
+	CASE
+	WHEN table1.total_profit > AVG(table1.total_profit) OVER() THEN 'Normal'
+	ELSE 'Underperforming'
+	END AS segmentation
+FROM table1
