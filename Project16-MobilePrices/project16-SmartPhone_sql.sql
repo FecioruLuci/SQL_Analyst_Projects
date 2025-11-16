@@ -183,3 +183,82 @@ FROM phones
 GROUP BY 1
 ORDER BY 2 DESC
 
+-- 21. Display the top 3 models with the highest rating for each brand, 
+-- and if ratings are equal, sort by price in descending order.
+SELECT *
+FROM
+(
+SELECT
+	brand,
+	model,
+	rating,
+	price_usd,
+	ROW_NUMBER () OVER(PARTITION BY brand ORDER BY rating DESC, price_usd DESC) AS ranking
+FROM phones
+)
+WHERE ranking <= 3
+
+-- 22. For each brand, calculate the price difference between each model and the previous model of the same brand 
+-- (ordered alphabetically by model), and also show the brand’s average price.
+WITH table1
+AS
+(
+SELECT
+	brand,
+	model,
+	price_usd,
+	LAG(price_usd) OVER(PARTITION BY brand ORDER BY model)AS previous
+FROM phones
+)
+
+SELECT 
+	t1.brand,
+	t1.model,
+	t1.price_usd,
+	t1.previous,
+	price_usd - previous AS difference,
+	ROUND(AVG(price_usd) OVER(PARTITION BY brand)::numeric,1)
+FROM table1 as t1
+WHERE previous IS NOT NULL
+
+-- 23. For each year, determine the model with the highest price increase compared to the previous model 
+-- of the same brand (using LAG()).
+WITH table1
+AS
+(
+SELECT
+	brand,
+	model,
+	price_usd,
+	year,
+	LAG(price_usd) OVER(partition BY brand ORDER BY year,model) AS previous
+FROM phones
+ORDER BY year ASC
+),
+table2
+AS
+(
+SELECT
+	t1.brand,
+	t1.model,
+	t1.price_usd,
+	t1.previous,
+	t1.year,
+	(price_usd - previous)AS price_increase
+FROM table1 AS t1
+WHERE previous IS NOT NULL
+)
+SELECT *
+FROM
+(
+SELECT
+		brand,
+		model,
+		price_usd,
+		previous,
+		price_increase,
+		year,
+		ROW_NUMBER() OVER(PARTITION BY year,brand ORDER BY price_increase DESC) AS ranking
+FROM table2 as t2
+)
+WHERE ranking <= 1
