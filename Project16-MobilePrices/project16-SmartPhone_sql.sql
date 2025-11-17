@@ -262,3 +262,39 @@ SELECT
 FROM table2 as t2
 )
 WHERE ranking <= 1
+
+-- Compute the mean, median, and 90th percentile of price for each brand.
+WITH table1
+AS
+(
+SELECT
+	brand,
+	ROUND(AVG(price_usd)::numeric,1) as mean,
+	PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY price_usd) as mediann,
+	PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY price_usd) as percentile_90
+FROM phones
+GROUP BY 1
+),
+table2
+AS
+(
+SELECT
+	brand,
+	model,
+	price_usd,
+	ROW_NUMBER() OVER(PARTITION BY brand ORDER BY price_usd) AS ranking
+FROM phones
+)
+
+SELECT
+	t1.brand,
+	t2.model,
+	t1.mean,
+	t1.mediann,
+	t1.percentile_90,
+	t2.price_usd,
+	t2.ranking
+FROM table1 as t1
+LEFT JOIN table2 as t2
+ON t1.brand = t2.brand
+ORDER BY t1.brand, t2.price_usd 
