@@ -1,129 +1,183 @@
-## 🍕 Pizza Sales Analysis Project
+## 📊 Mobile Phone Market Analysis Project
+This project provides a comprehensive analysis of mobile phone specifications, pricing trends, and market performance across various brands and models. The analysis leverages SQL to extract valuable insights about product features, customer preferences, and competitive positioning in the smartphone industry.
 
-This project focuses on exploring and analyzing a pizza sales dataset to uncover insights about revenue trends, customer ordering behavior, and product performance. The analysis is performed using SQL to calculate key performance metrics and visualize patterns across categories, sizes, and time periods.
+## 🎯 Power BI Dashboard Overview
+I developed an interactive Power BI dashboard that provides comprehensive insights into the mobile phone market, enabling users to explore and analyze device specifications, pricing trends, and brand performance through dynamic visualizations and filters.
 
+## 📱 Key Dashboard Features
+## Core Metrics & KPI Tracking
+
+1.Total Phones - Complete device count across all brands
+2.5G Supported Devices - Number of phones with 5G capability
+3.Average Price per Brand - Comparative pricing analysis
+4.Monthly Release Trends - Product launch patterns throughout the year
+
+## Advanced Device Filtering
+
+1.Budget Phones - Devices priced under $500
+2.Performance Models - Phones with more than 8GB RAM
+3.Battery Capacity Analysis - Phone battery performance by model
+4.Brand-Specific Insights - Filterable data for individual manufacturers
 ---
 
-## 📊 Data Preparation
-
-Created a main table named pizzatable, containing detailed transactional data with the following fields:
-
-pizza_id, order_id, pizza_name_id, quantity, order_date, order_time,
-unit_price, total_price, pizza_size, pizza_category,
-pizza_ingredients, pizza_name.
-
-Ensured data integrity by defining appropriate data types and primary keys.
-
-Verified data consistency using SELECT * FROM pizzatable; before proceeding with analysis. 
-
----
-
-## 🔍 Exploratory Analysis
-
-Using SQL queries, several key business metrics were calculated:
-
-## 1.Total Revenue
-
+## 📱 Dataset Overview
+Created and analyzed a detailed phones dataset with the following specifications:
 ```sql
-SELECT ROUND(SUM(total_price)) AS total_revenue FROM pizzatable;
-```
-## 2.Average Order Value (AOV)
-```sql
-SELECT ROUND((SUM(total_price) / COUNT(DISTINCT order_id))::numeric, 2) AS AVG_ORDER
-FROM pizzatable;
+DROP TABLE IF EXISTS phones;
+CREATE TABLE phones(
+    brand VARCHAR(25),
+    model VARCHAR(25),
+    price_usd INT,
+    ram_gb INT,
+    storage_gb INT,
+    camera_mp INT,
+    battery_mah INT,
+    display_size_inch FLOAT,
+    charging_watt INT,
+    fiveg_support VARCHAR(10),
+    os VARCHAR(25),
+    processor VARCHAR(25),
+    rating FLOAT,
+    release_month VARCHAR(25),    
+    year INT
+);
 ```
 
-## 3.Total Pizzas Sold
+## 🎯 Key Analytical Queries
+1. Market Segmentation & Brand Performance
+
 ```sql
-SELECT SUM(quantity) AS Pizzas_Sold FROM pizzatable;
+-- Brand market share and average pricing
+SELECT
+    brand,
+    COUNT(model) AS model_count,
+    ROUND(AVG(price_usd)::numeric,1) AS avg_price,
+    ROUND(AVG(rating)::numeric,2) AS avg_rating
+FROM phones
+GROUP BY brand
+ORDER BY model_count DESC;
+```
+2. Technology Adoption Trends
+
+
+```sql
+-- 5G penetration analysis
+SELECT
+    fiveg_support,
+    COUNT(*) AS device_count,
+    ROUND(AVG(price_usd)::numeric,1) AS avg_price
+FROM phones
+GROUP BY fiveg_support;
+
+-- Processor performance categorization
+SELECT
+    processor,
+    CASE
+        WHEN processor = 'Snapdragon 6 Gen 1' THEN 'Low'
+        WHEN processor = 'Snapdragon 8 Gen 3' THEN 'High'
+        ELSE 'Medium'
+    END AS performance_tier,
+    ROUND(AVG(price_usd)::numeric,2) AS avg_price
+FROM phones
+GROUP BY processor;
 ```
 
-## 4.Total Orders
+3. Advanced Statistical Analysis
+
 ```sql
-SELECT COUNT(DISTINCT order_id) AS Total_Orders FROM pizzatable;
-```
-
-## 5.Average Pizzas per Order
-```sql
-SELECT ROUND((SUM(quantity)::numeric / COUNT(DISTINCT order_id))::numeric, 2)
-AS AVG_Pizza_Order FROM pizzatable;
-```
-
-## Sales Trends
-
-## 1.Daily Trend of Orders
-```sql
-SELECT COUNT(DISTINCT order_id), TO_CHAR(order_date, 'Day')
-FROM pizzatable
-GROUP BY 2;
-```
-
-## 2.Monthly Trend of Orders
-```sql
-SELECT COUNT(DISTINCT order_id), TO_CHAR(order_date, 'Month')
-FROM pizzatable
-GROUP BY 2;
-```
-
-## 🧀 Category and Size Performance
-
-## 1.Percentage of Sales by Pizza Category
-```sql
-WITH total AS (
-    SELECT SUM(total_price) AS total_sales FROM pizzatable
-)
-SELECT pizza_category,
-       ROUND((SUM(total_price) * 100 / total.total_sales)::numeric, 2) AS Percentage
-FROM pizzatable, total
-GROUP BY pizza_category, total.total_sales;
-```
-
-## 2.Percentage of Sales by Pizza Size
-```sql
-SELECT pizza_size,
-       ROUND(SUM(total_price)::numeric, 1) AS Total_Sales,
-       ROUND((SUM(total_price) * 100 / (SELECT SUM(total_price) FROM pizzatable))::numeric, 2)
-       AS Percentage
-FROM pizzatable
-GROUP BY pizza_size;
-```
-
-## 🏆 Top Performers
-
-## Top 5 Best-Selling Pizzas by revenue, quantity, and total orders:
-```sql
-SELECT pizza_name,
-       SUM(total_price) AS revenue,
-       SUM(quantity) AS total_quantity,
-       COUNT(DISTINCT order_id) AS total_orders
-FROM pizzatable
-GROUP BY pizza_name
-ORDER BY revenue DESC
+-- Camera-to-display ratio (imaging efficiency)
+SELECT
+    brand,
+    ROUND(AVG(camera_mp / display_size_inch)::numeric,2) AS imaging_ratio
+FROM phones
+GROUP BY brand
+ORDER BY imaging_ratio DESC
 LIMIT 5;
+
+-- Battery vs Display correlation
+SELECT
+    brand,
+    ROUND(CORR(battery_mah, display_size_inch)::numeric,3) AS battery_display_correlation
+FROM phones
+GROUP BY brand;
 ```
 
+4. Product Performance Insights
 
-## 📌 Summary
+```sql
+-- Top performers by brand
+SELECT *
+FROM (
+    SELECT
+        brand,
+        model,
+        rating,
+        price_usd,
+        ROW_NUMBER() OVER(PARTITION BY brand ORDER BY rating DESC, price_usd DESC) AS ranking
+    FROM phones
+) ranked_phones
+WHERE ranking <= 3;
 
-This project provides a data-driven overview of pizza sales performance, highlighting:
+-- Price outlier detection
+WITH brand_stats AS (
+    SELECT 
+        PERCENTILE_CONT(0.75) WITHIN GROUP(ORDER BY battery_mah) AS battery_threshold,
+        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY charging_watt) AS charging_threshold
+    FROM phones
+)
+SELECT 
+    brand,
+    model,
+    battery_mah,
+    charging_watt
+FROM phones, brand_stats
+WHERE battery_mah > brand_stats.battery_threshold
+    AND charging_watt < brand_stats.charging_threshold;
+```
 
-   -Revenue distribution across categories and sizes
+## 📊 Key Findings & Business Insights
+## Market Structure
+Comprehensive brand portfolio analysis
+Price segment distribution
+Technology adoption rates
 
-   -Daily and monthly sales trends
+## Consumer Value Propositions
+Best price-to-performance devices
+Premium feature analysis
+Budget segment opportunities
 
-   -Customer ordering behavior insights (AOV, average pizzas per order)
+## Product Development Insights
+Optimal specification combinations
+Feature prioritization based on pricing
+Competitive positioning strategies
 
-   -Top-selling products and performance breakdowns
+
+## 🛠 Technical Implementation
+SQL Features Utilized:
+Window Functions (ROW_NUMBER, LAG)
+Statistical Aggregates (PERCENTILE_CONT, CORR)
+Advanced Filtering (CTEs, Subqueries)
+Conditional Logic (CASE statements)
+Time-series Analysis
+
+## 📌 Project Summary
+This project provides a comprehensive data-driven analysis of the mobile phone market, delivering valuable insights across multiple dimensions:
+    -Market Structure & Brand Performance - Comprehensive analysis of brand positioning, pricing strategies, and market share distribution
+    -Technology Adoption Trends - 5G penetration rates, processor performance tiers, and feature evolution across price segments
+    -Product Specification Analysis - Camera capabilities, battery performance, display technologies, and charging innovations
+    -Consumer Value Assessment - Price-to-performance ratios, premium feature analysis, and budget segment opportunities
+    -Competitive Intelligence - Product benchmarking, specification comparisons, and market positioning strategies
 
 ## 🧰 Tech Stack
 
    SQL (PostgreSQL / MySQL compatible)
-   Data Visualization (Power BI / Tableau optional next step)
+   Data Visualization (Power BI)
 
 ## 📫 Connect with Me
 
    LinkedIn: [Connect with me professionally](https://www.linkedin.com/in/birsanlucian1/)
    
    E-Mail: birsan.lucian04@gmail.com
+
 
 
