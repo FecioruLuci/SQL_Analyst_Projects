@@ -263,7 +263,7 @@ FROM table2 as t2
 )
 WHERE ranking <= 1
 
--- Compute the mean, median, and 90th percentile of price for each brand.
+-- 24. Compute the mean, median, and 90th percentile of price for each brand.
 WITH table1
 AS
 (
@@ -298,3 +298,110 @@ FROM table1 as t1
 LEFT JOIN table2 as t2
 ON t1.brand = t2.brand
 ORDER BY t1.brand, t2.price_usd 
+
+-- 25. Find the top 5 manufacturers with the highest average ratio of (camera_mp / display_size_inch).
+
+SELECT
+	brand,
+	ROUND(AVG(camera_mp / display_size_inch)::numeric,2) AS avg_ratio
+FROM phones
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 5
+
+-- 26. Compute the correlation between battery_mah and display_size_inch for each brand.
+
+SELECT
+	brand,
+	ROUND(CORR(battery_mah, display_size_inch)::numeric,3) AS correlation
+FROM phones
+GROUP BY 1
+
+-- 27. Return all models released in the last 6 months relative to the most recent date 
+-- in the dataset (without hardcoding any year).
+
+SELECT
+	brand,
+	model,
+	release_month
+FROM phones
+WHERE (release_month = 'June' OR
+	release_month = 'July' OR
+	release_month = 'September' OR
+	release_month = 'October' OR
+	release_month = 'November' OR
+	release_month = 'August') AND
+	year = 2025
+
+-- 28. Find all models with a large battery but weak charging, defined as:
+-- battery_mah > percentile_cont(0.75) and
+-- charging_watt < percentile_cont(0.25)
+-- (across the entire dataset)
+with table1
+AS
+(
+SELECT
+	PERCENTILE_CONT(0.75) WITHIN GROUP(ORDER BY battery_mah) AS batt_perc,
+	PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY charging_watt) AS char_perc
+FROM phones
+)
+
+SELECT
+	brand,
+	model,
+	battery_mah,
+	charging_watt,
+	t1. batt_perc,
+	t1.char_perc
+FROM phones
+JOIN table1 as t1
+ON TRUE
+WHERE battery_mah > t1.batt_perc
+	AND
+	charging_watt < t1.char_perc
+
+-- 29. Create a CTE that assigns a performance category to each processor 
+-- (e.g., Snapdragon 8 → high, Snapdragon 4 → low), then compute the average price per category.
+-- everything + snapdragon 7+ gen 2 medium, snapdragon 6 gen 1 low and snapdragon 8 gen 3 high
+WITH table1
+AS
+(
+SELECT
+	brand,
+	model,
+	price_usd,
+	processor,
+	CASE
+	WHEN processor = 'Snapdragon 6 Gen 1' THEN 'Low'
+	WHEN processor = 'Snapdragon 8 Gen 3' THEN 'High'
+	ELSE 'Medium'
+	END AS category
+FROM phones
+)
+
+SELECT
+	category,
+	ROUND(AVG(price_usd)::numeric,2)
+FROM table1 as t1
+GROUP BY 1
+
+-- 30. Display all models that have a higher price than the average price of all models with the same processor.
+with table1
+AS
+(
+SELECT
+	processor,
+	AVG(price_usd) AS avg_price
+FROM phones
+GROUP BY 1
+)
+
+SELECT
+	p.model,
+	p.price_usd,
+	t1.avg_price,
+	p.processor
+FROM phones as p
+JOIN table1 as t1
+ON p.processor = t1.processor
+WHERE p.price_usd > t1.avg_price
