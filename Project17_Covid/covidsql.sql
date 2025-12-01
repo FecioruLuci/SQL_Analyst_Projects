@@ -131,3 +131,155 @@ SELECT
 	table1.with_diabetes,
 	table2.without_diabetes
 FROM table1,table2
+
+-- 1.	Is there a correlation between alcohol consumption and the presence of skin cancer?
+SELECT
+	ROUND(CORR(skin_cancer_int, alcohol_consumption)::numeric,2) as corelation
+FROM
+(
+SELECT
+	alcohol_consumption,
+	CASE
+	WHEN skin_cancer = 'Yes' THEN 1
+	ELSE 0S
+	END as skin_cancer_int
+FROM covidd
+)
+
+-- 2.	What is the average BMI for people with heart disease vs. without?
+WITH with_disease
+AS
+(
+SELECT
+	ROUND(AVG(bmi)::numeric,2) as avg_bmi_with
+FROM covidd
+WHERE heart_disease = 'Yes'
+),
+without_disease
+AS
+(
+SELECT
+	ROUND(AVG(bmi)::numeric,2) as avg_bmi_without
+FROM covidd
+WHERE heart_disease = 'No'
+)
+
+SELECT
+	withd.avg_bmi_with,
+	withoutd.avg_bmi_without
+FROM with_disease as withd,without_disease as withoutd
+
+-- 3.	How does green vegetable consumption vary by age category?
+
+SELECT
+	age_category,
+	ROUND(AVG(green_vegetables_consumption)::numeric,2) as vary
+FROM covidd
+GROUP BY 1
+
+-- 4.	What is the prevalence of arthritis in men vs. women?
+
+SELECT
+	sex,
+	COUNT(*),
+	SUM(CASE WHEN arthritis = 'Yes' THEN 1 ELSE 0 END) AS prevelance_yes,
+	SUM(CASE WHEN arthritis = 'No' THEN 1 ELSE 0 END) AS prevelance_no,
+	ROUND(SUM(CASE WHEN arthritis = 'Yes' THEN 1 ELSE 0 END) * 100.0 / COUNT(*)::numeric,2) AS percentage
+FROM covidd
+GROUP BY 1
+ORDER BY 1
+
+-- 5.	Is there a difference in fried potato consumption between smokers and non-smokers?
+with yes_smokers
+AS
+(
+SELECT
+
+	smoking_history,
+	ROUND(AVG(friedpotato_consumption)::numeric,2) as fried_pot_cons_yes,
+	ROUND(STDDEV(friedpotato_consumption)::numeric,2) AS deviation_yes
+FROM covidd
+WHERE smoking_history = 'Yes'
+GROUP BY 1
+),
+no_smokers
+AS
+(
+SELECT
+	smoking_history,
+	ROUND(AVG(friedpotato_consumption)::numeric,2) as fried_pot_cons_no,
+	ROUND(STDDEV(friedpotato_consumption)::numeric,2) AS deviation_no
+FROM covidd
+WHERE smoking_history = 'No'
+GROUP BY 1
+)
+
+SELECT * FROM yes_smokers
+UNION ALL 
+SELECT * FROM no_smokers
+
+-- 6.	What is the relationship between the frequency of checkups and the presence of other types of cancer?
+
+SELECT 
+	checkup,
+	COUNT(*),
+	SUM(CASE WHEN other_cancer = 'Yes' THEN 1 ELSE 0 END) AS people_with_cancer,
+	SUM(CASE WHEN other_cancer = 'No' THEN 1 ELSE 0 END) AS people_with_cancer,
+	ROUND(SUM(CASE WHEN other_cancer = 'Yes' THEN 1 ELSE 0 END) * 100.0 / COUNT(*)::numeric,2) AS with_cancer_percentage
+FROM covidd
+GROUP BY 1
+
+-- 1.	What are the most important risk factors that predict diabetes in this dataset? 
+with by_exercise
+AS
+(
+SELECT
+	diabetes,
+	SUM(CASE WHEN exercise = 'Yes' THEN 1 ELSE 0 END) AS yes_exercise,
+	SUM(CASE WHEN exercise = 'No' THEN 1 ELSE 0 END) AS no_exercise
+FROM covidd
+GROUP BY 1
+),
+by_depression
+AS
+(
+SELECT
+	diabetes,
+	SUM(CASE WHEN depression = 'Yes' THEN 1 ELSE 0 END) AS yes_depression,
+	SUM(CASE WHEN depression = 'No' THEN 1 ELSE 0 END) AS no_depression
+FROM covidd
+GROUP BY 1
+)
+
+SELECT
+	be.diabetes,
+	be.yes_exercise,
+	be.no_exercise,
+	bd.yes_depression,
+	bd.no_depression
+FROM by_exercise as be
+JOIN by_depression as bd 
+ON be.diabetes = bd.diabetes
+
+-- 2.	Is there a non-linear relationship between age and the probability of having heart disease?
+
+SELECT
+	age_category,
+	COUNT(*),
+	SUM(CASE WHEN heart_disease = 'Yes' THEN 1 ELSE 0 END) AS disease_yes,
+	SUM(CASE WHEN heart_disease = 'No' THEN 1 ELSE 0 END) AS disease_no,
+	ROUND(SUM(CASE WHEN heart_disease = 'Yes' THEN 1 ELSE 0 END) * 100.0 / COUNT(*),2) AS percentage_with_desease
+FROM covidd
+GROUP BY 1
+
+-- 3.	What is the combined impact of fruit and green vegetable consumption on the risk of depression?
+
+SELECT
+	depression,
+	AVG(fruit_consumption),
+	AVG(green_vegetables_consumption)
+FROM covidd
+
+-- people with no depresion tend to eat more fruits and vegetables
+GROUP BY 1
+
