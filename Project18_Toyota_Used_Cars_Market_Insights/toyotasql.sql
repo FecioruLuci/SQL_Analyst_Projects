@@ -95,3 +95,94 @@ SELECT
 FROM toyotaa
 ORDER BY 3 DESC
 LIMIT 1
+
+-- 11. Calculate the average price (price) for cars grouped by fuelType and transmission.
+
+SELECT
+	fueltype,
+	transmission,
+	ROUND(AVG(price)::numeric,2) AS average_price
+FROM toyotaa
+GROUP BY 1,2
+
+-- 12.	Determine the percentage of the total car count that each fuelType represents.
+WITH table1
+AS
+(
+SELECT
+	COUNT(*) AS total_cars
+FROM toyotaa
+)
+
+SELECT
+	fueltype,
+	t1.total_cars,
+	ROUND(COUNT(*)::numeric / t1.total_cars * 100,2) AS percentage_total
+FROM toyotaa
+CROSS JOIN table1 as t1
+GROUP BY 1,2
+
+--13.	Find the models (model) whose average mpg is higher than the overall average mpg of all cars.
+WITH table1
+AS
+(
+SELECT 
+	ROUND(AVG(mpg)::numeric,2) as total_avg_mpg
+FROM toyotaa
+)
+
+SELECT 
+	model,
+	t1.total_avg_mpg,
+	ROUND(AVG(mpg)::numeric,2) AS avg_mpg_model
+FROM toyotaa
+CROSS JOIN table1 as t1
+GROUP BY 1,2
+HAVING AVG(mpg) > t1.total_avg_mpg
+
+-- 14.	Identify the models (model) that have both Automatic and Manual transmission options present in the dataset.
+
+SELECT
+	 model
+FROM toyotaa
+WHERE transmission = 'Manual' OR
+	transmission ='Automatic'
+GROUP BY 1
+HAVING COUNT(DISTINCT transmission) = 2
+
+-- 15.	Assign a 'Tax Bracket' (Low, Medium, High) based on the tax column (Low less 100, 
+-- Medium > 100 and less 300, High > 300). Count how many cars fall into each bracket.
+SELECT
+	segmentation,
+	COUNT(*)
+FROM
+(
+SELECT
+	model,
+	CASE
+	WHEN tax <= 100 THEN 'Low Tax'
+	WHEN tax > 100 AND tax <= 300 THEN 'Medium Tax'
+	ELSE 'High Tax'
+	END AS segmentation
+FROM toyotaa
+)
+GROUP BY 1
+
+-- 16.	Calculate the median mileage (mileage) for cars manufactured in the last 5 years available in the dataset.
+WITH table1
+AS
+(
+SELECT
+	MAX(year) as max_year
+FROM toyotaa
+)
+
+
+
+SELECT 
+	ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY mileage)::numeric,2) AS median
+FROM toyotaa
+CROSS JOIN table1 as t1
+WHERE year >= t1.max_year - 5
+
+--
