@@ -185,4 +185,95 @@ FROM toyotaa
 CROSS JOIN table1 as t1
 WHERE year >= t1.max_year - 5
 
---
+-- 17.	Find all cars where the price is below the average price for its specific model.
+WITH table1
+AS
+(
+SELECT
+	ROUND(AVG(price)::numeric,2) AS total_avg_price
+FROM toyotaa
+)
+
+SELECT
+	model,
+	t1.total_avg_price,
+	price
+FROM toyotaa
+CROSS JOIN table1 as t1
+WHERE price < t1.total_avg_price
+
+-- 18.	What is the difference between the average mpg of the most expensive model and 
+-- the average mpg of the cheapest model (based on average price)?
+WITH table1
+AS
+(
+SELECT
+	model,
+	AVG(mpg) AS avg_mpg,
+	price
+FROM toyotaa
+GROUP BY 1,3
+ORDER BY price DESC
+LIMIT 1
+),
+
+table2
+AS
+(
+SELECT
+	model,
+	AVG(mpg) AS avg_mpg,
+	price
+FROM toyotaa
+GROUP BY 1,3
+ORDER BY price ASC
+LIMIT 1
+)
+
+SELECT *
+FROM table1 AS t1
+UNION ALL
+SELECT *
+FROM table2 AS t2
+-- the cheapeast  models have a lower avg_mpg than the expensive models
+
+-- 19.	List the model and year combinations that have a combined total mileage exceeding 500,000 miles.
+
+SELECT
+	model,
+	year,
+	SUM(mileage)
+FROM toyotaa
+GROUP BY 1,2
+HAVING SUM(mileage) < 500000
+
+-- 20.	Calculate the average engineSize for cars that cost more than the 75th percentile of the price distribution.
+
+SELECT
+
+	ROUND(AVG(engineSize)::numeric,2) AS avg_enginesize
+FROM toyotaa
+WHERE price > (SELECT PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY price) from toyotaa)
+
+-- 21.	For each model, calculate the Z-score for the price of every car. 
+-- (Z-score = (price - AVG(price)) / STDDEV(price) within the model group).
+
+SELECT
+	model,
+	price,
+	(price - AVG(price) OVER()) / STDDEV(price) OVER() AS zcore
+FROM toyotaa
+
+-- 22.	Rank all cars based on their 'Value Index', defined as the ratio of (price / (mileage + 1)) 
+-- within each model group.
+SELECT
+	*,
+	DENSE_RANK() OVER(PARTITION BY model ORDER BY value_index DESC)
+FROM
+(
+SELECT
+	model,
+	year,
+	price / (mileage + 1) AS value_index
+FROM toyotaa
+)
