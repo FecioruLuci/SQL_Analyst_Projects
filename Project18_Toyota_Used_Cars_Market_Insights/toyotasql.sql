@@ -277,3 +277,181 @@ SELECT
 	price / (mileage + 1) AS value_index
 FROM toyotaa
 )
+
+-- 23.	Identify the top 10% of cars that offer the highest mpg relative to their engineSize. (maximize mpg / engineSize)
+with table1
+AS
+(
+SELECT
+	model,
+	(mpg / enginesize) AS highest_mpg,
+	NTILE(10) OVER(ORDER BY (mpg / enginesize) DESC) AS top_ten
+FROM toyotaa
+WHERE enginesize IS NOT NULL AND 
+	enginesize != 0
+)
+
+SELECT
+	t1.model,
+	t1.highest_mpg,
+	t1.top_ten
+FROM table1 AS t1
+WHERE t1.top_ten = 1
+
+-- 24.	Calculate the cumulative sum of price over year for each transmission type.
+
+SELECT
+	year,
+	SUM(price) OVER(PARTITION BY transmission ORDER BY year),
+	transmission
+FROM toyotaa
+
+-- 25.	Calculate the average annual depreciation rate for each model in the dataset. (Assume the current year is 2025: Rate = price / (2025 - year)).
+WITH table1
+AS
+(
+SELECT
+	model,
+	ROUND(price / (EXTRACT (YEAR FROM CURRENT_DATE) - year)::numeric,2) AS avg_depreciation
+FROM toyotaa
+)
+
+SELECT
+	t1.model,
+	ROUND(AVG(t1.avg_depreciation)::numeric,2) AS avg_depreciation_per_model
+FROM table1 as t1
+GROUP BY 1
+
+-- 26.	Identify cars that are potentially "overpriced" by having a price that is 50% higher than the average price of cars with the same model.
+WITH table1
+AS
+(
+SELECT
+	model,
+	price,
+	AVG(price) OVER(PARTITION BY model) AS avg_price_model
+FROM toyotaa
+)
+
+SELECT
+	t1.model,
+	t1.price,
+	ROUND(t1.avg_price_model) AS avg_price_per_model,
+	ROUND(t1.avg_price_model * 1.5) AS avg_price_with_50_perc
+FROM table1 as t1
+WHERE t1.price > t1.avg_price_model * 1.5
+
+-- 27.	Compare the average tax of cars in the current year (year) to the average tax of cars from the previous year (year - 1). 
+-- List the percentage increase/decrease for each year.
+with table1
+AS
+(
+SELECT
+	year,
+	ROUND(AVG(tax)) AS avg_tax_year
+FROM toyotaa
+GROUP BY 1
+ORDER BY 1 ASC
+)
+
+SELECT
+	t1.year,
+	t1.avg_tax_year,
+	LAG(t1.avg_tax_year) OVER(ORDER BY year) AS last_year_tax,
+	ROUND((t1.avg_tax_year - LAG(t1.avg_tax_year) OVER(ORDER BY year)) / LAG(t1.avg_tax_year) OVER(ORDER BY year) * 100,2) AS perc_incr_decr
+FROM table1 as t1
+
+-- 8.	Find the models (model) that have the lowest tax rate (tax / price) compared to all other models with the same engineSize.
+WITH table1
+AS
+(
+SELECT
+	model,
+	tax,
+	price,
+	enginesize,
+	ROUND(tax / price::numeric,5) AS tax_rate
+FROM toyotaa
+)
+SELECT
+	*
+FROM
+(
+SELECT
+	t1.model,
+	t1.tax,
+	t1.price,
+	t1.enginesize,
+	t1.tax_rate,
+	RANK() OVER(PARTITION BY enginesize ORDER BY tax_rate ASC) as ranking
+FROM table1 as t1
+WHERE t1.tax_rate != 0
+)
+WHERE ranking = 1
+
+-- 9.	Determine the models (model) that saw an increase in price and a simultaneous decrease in mileage between two consecutive manufacturing years (year and year + 1).
+WITh table1
+AS
+(
+SELECT 
+	model,
+	year,
+	AVG(price) AS avg_price,
+	AVG(mileage) AS avg_mileage
+FROM toyotaa
+GROUP BY 1,2
+),
+table2
+AS
+(
+SELECT
+	t1.model,
+	t1.year,
+	t1.avg_price,
+	t1.avg_mileage,
+	LEAD(avg_price, 1) OVER(PARTITION BY t1.model ORDER BY t1.year) AS next_year_price,
+	LEAD(avg_mileage, 1) OVER(PARTITION BY t1.model ORDER BY t1.year) AS next_year_mileage
+FROM table1 AS t1
+)
+
+SELECT
+	t2.model,
+	t2.year,
+	ROUND(t2.avg_price::numeric,2) AS avg_price,
+	ROUND(t2.avg_mileage::numeric,2) AS avg_mileage,
+	ROUND(t2.next_year_price::numeric,2) AS next_year_price,
+	ROUND(t2.next_year_mileage::numeric,2) AS next_year_mileage
+FROM table2 as t2
+WHERE t2.next_year_price > t2.avg_price
+	AND
+	t2.next_year_mileage < t2.avg_mileage
+
+-- 10.	For the top 5 most common models, calculate the correlation coefficient between price and mileage.
+WITH top5models
+AS
+(
+SELECT
+	model
+FROM toyotaa
+GROUP BY 1
+ORDER BY COUNT(*) DESC
+LIMIT 5
+),
+top5data
+AS
+(
+SELECT 
+	toy.model,
+	toy.price,
+	toy.mileage
+FROM toyotaa as toy
+JOIN top5models as t5
+ON t5.model = toy.model
+)
+
+SELECT
+	t5d.model,
+	ROUND(CORR(t5d.price, t5d.mileage)::numeric,3)
+FROM top5data as t5d
+GROUP BY 1
+-- this means if the price goes down the mileage goes up
