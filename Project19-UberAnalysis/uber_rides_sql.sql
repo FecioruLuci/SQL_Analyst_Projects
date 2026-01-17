@@ -4,32 +4,33 @@ CREATE TABLE uber_rides(
 	time_created	TIME,
 	booking_id	VARCHAR(50),
 	booking_status	VARCHAR(50),
-	customer_id	VARC
-	vehicle_type	
-	pickup_location	
-	drop_location	
-	avg_vtat	
-	avg_ctat	
-	cancelled_rides_by_customer	
-	reason_for_cancelling_by_customer	
-	cancelled_rides_by_driver	
-	driver_cancellation_reason	
-	incomplete_rides	
-	incomplete_rides_reason	
-	booking_value	
-	ride_distance	
-	driver_ratings	
-	customer_rating	payment_method
+	customer_id	VARCHAR(50),
+	vehicle_type	VARCHAR(50),
+	pickup_location	VARCHAR(50),
+	drop_location	VARCHAR(50),
+	avg_vtat	FLOAT,
+	avg_ctat	FLOAT,
+	cancelled_rides_by_customer	INT,	
+	reason_for_cancelling_by_customer	VARCHAR(50),	
+	cancelled_rides_by_driver	INT,
+	driver_cancellation_reason	VARCHAR(50),
+	incomplete_rides	INT,	
+	incomplete_rides_reason	VARCHAR(50),
+	booking_value	INT,
+	ride_distance	FLOAT,
+	driver_ratings	FLOAT,
+	customer_rating	FLOAT,
+	payment_method	VARCHAR(50)
 
 )
--- Write a query to count the total number of bookings for each booking_status.
+-- 1.Write a query to count the total number of bookings for each booking_status.
 SELECT
 	COUNT(*),
 	booking_status
 FROM uber_rides
 GROUP BY booking_status
 
---  Retrieve all booking_ids where the booking_value is greater than 500.
+--  2.Retrieve all booking_ids where the booking_value is greater than 500.
 
 SELECT
 	booking_id,
@@ -38,12 +39,12 @@ FROM uber_rides
 WHERE booking_value > 500
 ORDER BY 2 DESC
 
--- List all unique pickup_location names present in the database.
+-- 3.List all unique pickup_location names present in the database.
 SELECT
 	DISTINCT pickup_location
 FROM uber_rides
 
--- Find all rides completed using a 'Prime Sedan' as the vehicle_type.
+-- 4.Find all rides completed using a 'Prime Sedan' as the vehicle_type.
 
 SELECT
 	*
@@ -52,20 +53,20 @@ WHERE vehicle_type = 'Premier Sedan'
 	AND
 	booking_status = 'Completed'
 
--- Calculate the average customer_rating for all completed rides.
+-- 5.Calculate the average customer_rating for all completed rides.
 
 SELECT
 	ROUND(AVG(customer_rating)::numeric,2) as customer_average
 FROM uber_rides
 WHERE booking_status = 'Completed'
 
--- Retrieve all bookings created on the date '2024-01-15'.
+-- 6.Retrieve all bookings created on the date '2024-01-15'.
 
 SELECT *
 FROM uber_rides
 WHERE date_created = '2024-01-15'
 
--- Find all customers whose pickup_location starts with the letter 'A' using LIKE.
+-- 7.Find all customers whose pickup_location starts with the letter 'A' using LIKE.
 
 SELECT
 	customer_id,
@@ -74,7 +75,7 @@ FROM uber_rides
 WHERE pickup_location LIKE 'A%'
 ORDER BY 1
 
---  Select the top 5 highest booking_value entries, ordered from largest to smallest.
+--  8.Select the top 5 highest booking_value entries, ordered from largest to smallest.
 SELECT *
 FROM
 (
@@ -86,14 +87,14 @@ FROM uber_rides
 )
 WHERE rank <= 5
 
--- Count how many rides have a NULL value in the driver_cancellation_reason column.
+-- 9.Count how many rides have a NULL value in the driver_cancellation_reason column.
 
 SELECT
 	COUNT(*) as good_rides
 FROM uber_rides
 WHERE driver_cancellation_reason IS NULL
 
--- Identify the most used payment_method using LIMIT 1.
+-- 10.Identify the most used payment_method using LIMIT 1.
 
 SELECT
 	COUNT(payment_method) as nr_of_payments,
@@ -102,3 +103,105 @@ FROM uber_rides
 GROUP BY 2
 ORDER BY 1 DESC
 LIMIT 1
+
+-- 11.Use EXTRACT(HOUR FROM time_created) to find which hour of the day has the most bookings.
+
+SELECT
+	COUNT(EXTRACT(HOUR FROM time_created)) as nr_of_bookings,
+	EXTRACT(HOUR FROM time_created)
+FROM uber_rides
+GROUP BY EXTRACT(HOUR FROM time_created)
+ORDER BY 1 DESC
+
+-- 12.Calculate the percentage of rides cancelled by customers versus the total number of bookings.
+with table1
+AS
+(
+SELECT
+	COUNT(cancelled_rides_by_customer) as nr_of_decline
+FROM uber_rides
+WHERE cancelled_rides_by_customer = 1
+)
+
+SELECT
+	ROUND(nr_of_decline / (SELECT COUNT(*) FROM uber_rides)::numeric * 100,2) as percentage
+FROM table1
+
+-- 13.Find customer_ids who have made more than 2 bookings.
+
+SELECT
+	booking_id,
+	COUNT(booking_id)
+FROM uber_rides
+GROUP BY 1
+HAVING COUNT(booking_id) > 2
+ORDER BY 2 DESC
+
+-- 14.List each vehicle_type and its total revenue, but only for types that generated more than 10000000 in total.
+
+SELECT
+	vehicle_type,
+	SUM(booking_value) as total_revenue
+FROM uber_rides
+GROUP BY 1
+HAVING SUM(booking_value) > 10000000
+ORDER BY 2 DESC
+
+-- 15.Create a column value_category using a CASE statement (e.g., >500 is 'High', else 'Low').
+
+SELECT
+	*,
+	CASE
+	WHEN booking_value > 500 THEN 'High'
+	WHEN booking_value > 0 AND booking_value < 500 THEN 'Low'
+	ELSE 'Cancelled'
+	END AS value_category
+FROM uber_rides
+
+-- 16.Calculate the average ride_distance for each vehicle_type.
+
+SELECT
+	vehicle_type,
+	ROUND(AVG(ride_distance)::numeric,2) as avg_distance_per_vehicle
+FROM uber_rides
+GROUP BY 1
+
+-- 17.(Assuming a separate Customer table) Join the bookings with customers to find the names of people who used 'Cash' payment.
+
+SELECT
+	booking_id,
+	customer_name
+FROM uber_rides as u
+INNER JOIN customers as c
+ON u.customer_id = c.customer_id
+WHERE payment = 'Cash'
+
+-- 18.For all cancelled_rides_by_driver, list the top 3 most common driver_cancellation_reason.
+
+SELECT 
+	driver_cancellation_reason,
+	COUNT(driver_cancellation_reason)
+FROM uber_rides
+WHERE cancelled_rides_by_driver = 1
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 3
+
+-- 19.Group the total booking_value by month.
+
+SELECT 
+	SUM(booking_value) AS total_booking_value,
+	EXTRACT(MONTH FROM date_created) AS monthh
+FROM uber_rides
+GROUP BY 2
+ORDER BY 2
+
+--20.Find the difference between customer_rating and driver_ratings for each booking.
+
+SELECT
+	booking_id,
+	customer_rating,
+	driver_ratings,
+	ROUND(ABS(customer_rating - driver_ratings)::numeric,2) as difference
+FROM uber_rides
+ORDER BY 1 ASC
