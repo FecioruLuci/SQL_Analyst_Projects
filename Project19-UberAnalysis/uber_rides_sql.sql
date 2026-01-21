@@ -205,3 +205,51 @@ SELECT
 	ROUND(ABS(customer_rating - driver_ratings)::numeric,2) as difference
 FROM uber_rides
 ORDER BY 1 ASC
+
+-- 21.Rank customers within each pickup_location based on their total booking_value.
+
+SELECT
+	customer_id,
+	booking_id,
+	pickup_location,
+	booking_value,
+	RANK() OVER(PARTITION BY pickup_location ORDER BY booking_value DESC) AS customer_ranking
+FROM uber_rides
+
+-- 22.Calculate a 7-day rolling average of the daily total booking_value.
+with total
+AS
+(
+SELECT
+	date_created,
+	SUM(booking_value) as suma
+FROM uber_rides
+GROUP BY 1
+)
+
+SELECT
+	date_created,
+	suma,
+	ROUND(AVG(suma) OVER(ORDER BY date_created ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)::numeric,2) AS averagee
+FROM total
+ORDER BY date_created
+
+-- 23.Using a CTE, find the average time difference between a customer's first and second booking.
+with firstt
+AS
+(
+SELECT
+	customer_id,
+	date_created,
+	MIN(date_created) AS first_order
+FROM uber_rides
+GROUP BY 1,2
+)
+
+SELECT
+	customer_id,
+	first_order,
+	MAX(date_created) AS last_order,
+	MAX(date_created) - first_order
+FROM firstt
+GROUP BY 1
