@@ -234,22 +234,40 @@ SELECT
 FROM total
 ORDER BY date_created
 
--- 23.Using a CTE, find the average time difference between a customer's first and second booking.
-with firstt
+-- 23.Using a CTE, find the average time difference between a customer's first and last.
+WITH table1
 AS
 (
 SELECT
 	customer_id,
+	MAX(CASE
+	WHEN order_number = 1
+	THEN date_created
+	END) AS first_order,
+	MAX(CASE 
+	WHEN order_number = 2
+	THEN date_created
+	END) as second_order
+FROm 
+(
+SELECT
+	customer_id,
 	date_created,
-	MIN(date_created) AS first_order
+	ROW_NUMBER() OVER(PARTITION BY customer_id ORDER BY date_created) AS order_number
 FROM uber_rides
-GROUP BY 1,2
+)
+GROUP BY 1
 )
 
 SELECT
 	customer_id,
+	second_order,
 	first_order,
-	MAX(date_created) AS last_order,
-	MAX(date_created) - first_order
-FROM firstt
-GROUP BY 1
+	(table1.second_order - table1.first_order)
+FROM table1
+WHERE second_order IS NOT NULL
+--
+SELECT *
+FROM uber_rides
+
+
