@@ -1,4 +1,5 @@
 
+
 DROP TABLE IF EXISTS foodpanda
 CREATE TABLE foodpanda(
 customer_id	VARCHAR(15),
@@ -204,3 +205,67 @@ SELECT
 	ROUND(total_sales::numeric,1) AS total_sales_per_dishes
 FROM table1
 ORDER BY 1
+
+-- 18  How does the monthly order volume trend over time (Seasonality analysis)?
+with table1
+AS
+(
+SELECT
+	DATE_TRUNC('month', order_date) AS luna_an,
+	COUNT(*) AS nr_comenzi
+FROM foodpanda
+GROUP BY 1
+)
+
+SELECT
+	luna_an,
+	nr_comenzi,
+	LAG(nr_comenzi) OVER(ORDER BY luna_an) AS an_trecut,
+	(nr_comenzi - LAG(nr_comenzi) OVER(ORDER BY luna_an)) * 100 / LAG(nr_comenzi) OVER(ORDER BY luna_an) AS procentaj
+FROM table1
+
+-- 19 Do customers with higher loyalty points tend to leave higher ratings?
+with bigger
+AS
+(
+SELECT 
+	ROUND(AVG(rating)::numeric,2) AS high_loy
+FROM foodpanda
+WHERE loyalty_points > 250
+),
+smaller
+AS
+(
+SELECT
+	ROUND(AVG(rating)::numeric,2) AS low_loy
+FROM foodpanda
+WHERE loyalty_points < 250
+)
+
+SELECT
+	bigger.high_loy,
+	smaller.low_loy
+FROM bigger,smaller
+
+SELECT
+	ROUND(CORR(loyalty_points, rating)::numeric,2)
+FROM foodpanda
+
+-- 20  What is the average basket size (quantity of items per order) for each city?
+WITH table1
+AS
+(
+SELECT
+	city,
+	order_id,
+	SUM(quantity) AS total_per_order
+FROM foodpanda
+GROUP BY 1,2
+ORDER BY 1
+)
+
+SELECT
+	city,
+	ROUND(AVG(total_per_order)::numeric,2)
+FROM table1
+GROUP BY 1
