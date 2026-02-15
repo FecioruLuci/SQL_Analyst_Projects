@@ -269,3 +269,44 @@ SELECT
 	ROUND(AVG(total_per_order)::numeric,2)
 FROM table1
 GROUP BY 1
+
+-- 21  RFM Segmentation: Assign a score to each customer based on Recency (last_order_date), Frequency (order_frequency), and Monetary value (total spend).
+WITH customer_info
+AS
+(
+SELECT
+	customer_id,
+	MAX(order_date) AS last_order,
+	COUNT(order_id) AS frequency,
+	SUM(price) as valuee,
+	(CURRENT_DATE - MAX(order_date)) AS time_diff
+FROM foodpanda
+GROUP BY 1
+),
+
+score
+AS
+(
+SELECT
+	customer_id,
+	NTILE(5) OVER(ORDER BY time_diff DESC) AS time_score,
+	NTILE(5) OVER(ORDER BY valuee ASC) AS value_score,
+	NTILE(5) OVER(ORDER BY frequency ASC) AS freq_score
+FROM customer_info
+)
+
+SELECT
+	customer_id,
+	time_score,
+	value_score,
+	freq_score,
+	CASE
+	WHEN time_score >= 4 AND freq_score >= 4 THEN 'MVP'
+	WHEN time_score >= 4 AND freq_score < 4 THEN 'LOST-MVPs'
+	WHEN time_score <= 2 AND freq_score >= 4 THEN 'UPCOMING MVPs'
+	WHEN time_score <=2 AND freq_score <=2 THEN 'LOSSERS'
+	ELSE
+	'ONE_TIME_CUSTOMER'
+	END AS segmentation
+FROM score
+ORDER BY 5
