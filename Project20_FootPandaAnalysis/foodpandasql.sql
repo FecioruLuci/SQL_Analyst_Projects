@@ -1,5 +1,6 @@
 
 
+
 DROP TABLE IF EXISTS foodpanda
 CREATE TABLE foodpanda(
 customer_id	VARCHAR(15),
@@ -310,3 +311,49 @@ SELECT
 	END AS segmentation
 FROM score
 ORDER BY 5
+
+-- 23  Anomaly Detection: Identify "Power Users" whose order frequency is more than 3 standard deviations above the mean.
+with table1
+AS
+(
+SELECT
+	customer_id,
+	COUNT(*) order_count
+FROM foodpanda
+GROUP BY 1
+),
+
+table2
+AS
+(
+SELECT
+	AVG(table1.order_count) AS avg_freq
+	STDDEV(order_count) AS std_dev
+FROM table1
+)
+
+SELECT
+	customer_id,
+	order_count
+FROM table1,table2
+WHERE order_count > avg_freq + (3 * std_dev)
+
+-- 25  Re-engagement Logic: Based on order_frequency and last_order_date, list customers who are "overdue" for an order today.
+WITH table1
+AS
+(
+SELECT
+	customer_id,
+	COUNT(*),
+	MAX(order_date) AS last_order,
+	MIN(order_date),
+	(MAX(order_date) - MIN(order_date)),
+	ROUND((MAX(order_date) - MIN(order_date)) / COUNT(*)::numeric,2) AS AVG_order_days
+FROM foodpanda
+GROUP BY 1
+)
+
+SELECT
+	customer_id
+FROM table1
+WHERE (CURRENT_DATE - last_order) > AVG_order_days
