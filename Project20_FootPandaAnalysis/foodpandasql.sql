@@ -357,3 +357,51 @@ SELECT
 	customer_id
 FROM table1
 WHERE (CURRENT_DATE - last_order) > AVG_order_days
+
+-- 26  Performance Decay: Identify restaurants that have seen a consistent decline in average ratings over the last 6 months.
+-- latest order is 2025-08-22
+WITH table1
+AS
+(
+SELECT
+	restaurant_name,
+	AVG(rating) AS avg_rating,
+	DATE_TRUNC('month', order_date) AS monthh
+FROM foodpanda
+WHERE order_date >= '2025-03-01'
+GROUP BY 1,3
+
+),
+
+table2
+AS
+(
+SELECT
+	restaurant_name,
+	avg_rating,
+	monthh,
+	LAG(avg_rating) OVER(PARTITION BY restaurant_name ORDER BY monthh) AS last_month_avg
+FROM table1
+)
+
+SELECT
+	restaurant_name,
+	avg_rating,
+	last_month_avg,
+	monthh
+FROM table2
+WHERE avg_rating < last_month_avg 
+	AND
+	last_month_avg IS NOT NULL
+ORDER BY 1,4
+
+-- 27  Market Basket Analysis: Identify which categories or dishes are most frequently bought together in the same order_id.
+-- counter starts from 230 to 270 so i think that frequently is more than 250
+SELECT
+	category,
+	dish_name,
+	COUNT(dish_name) AS counter
+FROM foodpanda
+GROUP BY 1,2
+HAVING COUNT(dish_name) > 250
+ORDER BY 1
