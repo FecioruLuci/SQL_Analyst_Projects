@@ -139,34 +139,26 @@ FROM table1
 
 ## Technical Highlights
 
---Use of CTEs (WITH clauses`) for modular queries
+- **CTEs (`WITH` clauses`)** for modular queries  
+- **Window functions:** `ROW_NUMBER()`, `RANK()`, `DENSE_RANK()`, `LAG()`, `NTILE()` for ranking, segmentation, and trend analysis  
+- **Aggregations:** `COUNT`, `SUM`, `AVG`, `ROUND` for business KPIs  
+- **Correlation analysis:** `CORR()` to study relationships between variables  
+- **Time-based analysis:** `DATE_TRUNC`, date differences for seasonality, signup-to-first-order lag, and churn calculations  
+- **Advanced segmentation:** RFM scoring to classify customers as *MVPs*, *Lost-MVPs*, *Upcoming MVPs*, etc.  
+- **Anomaly detection:** identifying outlier customers in terms of order frequency  
 
---Window functions: ROW_NUMBER(), RANK(), DENSE_RANK(), LAG(), NTILE() for ranking, segmentation, and trend analysis
-
---Aggregations: COUNT, SUM, AVG, ROUND for business KPIs
-
---Correlation analysis: CORR() to study relationships between variables
-
---Time-based analysis: DATE_TRUNC, date differences for seasonality, signup-to-first-order lag, and churn calculations
-
---Advanced segmentation: RFM scoring to classify customers as MVPs, Lost-MVPs, Upcoming MVPs, etc.
-
---Anomaly detection: identifying outlier customers in terms of order frequency
-
+---
 
 ## Insights Generated
 
-Identified top-performing cities, restaurants, and dishes
+- **Top-performing cities, restaurants, and dishes** identified  
+- **Customer loyalty and churn patterns** measured  
+- **Relationship between loyalty points and ratings** evaluated  
+- **Temporal trends in order volumes** analyzed  
+- **High-risk customers** highlighted for potential re-engagement campaigns  
+- **Restaurants eligible for partnerships** determined based on customer engagement  
 
-Measured customer loyalty and churn patterns
-
-Evaluated the relationship between loyalty points and ratings
-
-Analyzed temporal trends in order volumes
-
-Highlighted high-risk customers for potential re-engagement campaigns
-
-Determined restaurants eligible for partnerships based on customer engagement
+---
 
 ## This SQL analysis provides a comprehensive foundation for customer analytics, restaurant performance monitoring, and business decision-making for Foodpanda.
 
@@ -180,6 +172,7 @@ Determined restaurants eligible for partnerships based on customer engagement
    LinkedIn: [Connect with me professionally](https://www.linkedin.com/in/birsanlucian1/)
    
    E-Mail: birsan.lucian04@gmail.com
+
 
 
 
