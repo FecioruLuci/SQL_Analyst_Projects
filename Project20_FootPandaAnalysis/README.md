@@ -6,17 +6,38 @@ This project focuses on exploring and analyzing a pizza sales dataset to uncover
 
 ## 📊 Data Preparation
 
-Created a main table named pizzatable, containing detailed transactional data with the following fields:
+Created a main table named foodpanda, containing detailed data with the following fields:
 
-pizza_id, order_id, pizza_name_id, quantity, order_date, order_time,
-unit_price, total_price, pizza_size, pizza_category,
-pizza_ingredients, pizza_name.
+customer_id, gender, age, city, signup_date, order_id, order_date, restaurant_name, dish_name, category, quantity, price, payment_method, order_frequency, last_order_date, loyalty_points, churned, rating, rating_date, delivery_status, age_int.
 
-Ensured data integrity by defining appropriate data types and primary keys.
+Ensured data integrity by defining appropriate data types.
 
-Verified data consistency using SELECT * FROM pizzatable; before proceeding with analysis. 
+```sql
+CREATE TABLE foodpanda(
+customer_id	VARCHAR(15),
+gender	VARCHAR(15),
+age	VARCHAR(25),
+city	VARCHAR(25),
+signup_date	DATE,
+order_id	VARCHAR(25),
+order_date	DATE,
+restaurant_name	VARCHAR(25),
+dish_name	VARCHAR(25),
+category	VARCHAR(25),
+quantity	INT,
+price	FLOAT,
+payment_method	VARCHAR(25),	
+order_frequency	INT,
+last_order_date	DATE,
+loyalty_points	INT,
+churned	VARCHAR(25),
+rating	INT,
+rating_date	DATE,
+delivery_status	VARCHAR(25),
+age_int INT
+)
+```
 
----
 
 ## 🔍 Exploratory Analysis
 
@@ -118,12 +139,13 @@ This project provides a data-driven overview of pizza sales performance, highlig
 ## 🧰 Tech Stack
 
    SQL (PostgreSQL / MySQL compatible)
-   Data Visualization (Power BI / Tableau optional next step)
+   Python (Data Transformation)
 
 ## 📫 Connect with Me
 
    LinkedIn: [Connect with me professionally](https://www.linkedin.com/in/birsanlucian1/)
    
    E-Mail: birsan.lucian04@gmail.com
+
 
 
