@@ -405,3 +405,66 @@ FROM foodpanda
 GROUP BY 1,2
 HAVING COUNT(dish_name) > 250
 ORDER BY 1
+
+-- 28  Financial Impact Modeling: Calculate the projected revenue impact if we offered a 10% discount to all customers with a "High" churn risk.
+WITH table1
+AS
+(
+SELECT
+	customer_id,
+	SUM(price * quantity) AS revenue,
+	CURRENT_DATE - MAX(order_date) AS last_order_date
+FROM foodpanda
+GROUP BY 1
+),
+table2
+AS
+(
+SELECT
+	customer_id,
+	revenue,
+	AVG(last_order_date) OVER(),
+	CASE
+	WHEN last_order_date > AVG(last_order_date) OVER() THEN 'ChurnRisk'
+	ELSE 'NoRisk'
+	END AS ChurnSegmentation
+FROM table1
+)
+
+SELECT
+	ChurnSegmentation,
+	SUM(revenue),
+	CASE
+	WHEN ChurnSegmentation = 'ChurnRisk' THEN SUM(revenue) - SUM(revenue) * 10/100
+	ELSE SUM(revenue) END AS churndiscount
+FROM table2
+GROUP BY 1
+
+-- 29  Rating Sensitivity: On average, how many days pass between a 1-star rating?\
+
+with table1
+AS
+(
+SELECT
+	customer_id,
+	order_date,
+	rating
+FROm foodpanda
+WHERE rating = 1
+ORDER BY order_date
+)
+SELECT
+	AVG(last_day)
+FROM
+(
+SELECT
+	customer_id,
+	order_date,
+	order_date - LAG(order_date) OVER(ORDER BY order_date) AS last_day
+FROm table1
+)
+WHERE last_day IS NOT NULL
+
+
+SELECT *
+FROM foodpanda
