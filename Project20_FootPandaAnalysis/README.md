@@ -43,98 +43,132 @@ age_int INT
 
 Using SQL queries, several key business metrics were calculated:
 
-## 1.Total Revenue
+## 1.Total Number of unique orders
 
 ```sql
-SELECT ROUND(SUM(total_price)) AS total_revenue FROM pizzatable;
+SELECT
+	COUNT(DISTINCT(order_date)) AS nr_of_unique_orders
+FROM foodpanda
 ```
-## 2.Average Order Value (AOV)
+## 2.Average price of a dish across all restaurants
 ```sql
-SELECT ROUND((SUM(total_price) / COUNT(DISTINCT order_id))::numeric, 2) AS AVG_ORDER
-FROM pizzatable;
-```
-
-## 3.Total Pizzas Sold
-```sql
-SELECT SUM(quantity) AS Pizzas_Sold FROM pizzatable;
+SELECT
+	ROUND(AVG(price)::numeric,2) AS avg_price
+FROM foodpanda
 ```
 
-## 4.Total Orders
+## 3.City with the highest volume of orders
 ```sql
-SELECT COUNT(DISTINCT order_id) AS Total_Orders FROM pizzatable;
-```
-
-## 5.Average Pizzas per Order
-```sql
-SELECT ROUND((SUM(quantity)::numeric / COUNT(DISTINCT order_id))::numeric, 2)
-AS AVG_Pizza_Order FROM pizzatable;
-```
-
-## Sales Trends
-
-## 1.Daily Trend of Orders
-```sql
-SELECT COUNT(DISTINCT order_id), TO_CHAR(order_date, 'Day')
-FROM pizzatable
-GROUP BY 2;
-```
-
-## 2.Monthly Trend of Orders
-```sql
-SELECT COUNT(DISTINCT order_id), TO_CHAR(order_date, 'Month')
-FROM pizzatable
-GROUP BY 2;
-```
-
-## 🧀 Category and Size Performance
-
-## 1.Percentage of Sales by Pizza Category
-```sql
-WITH total AS (
-    SELECT SUM(total_price) AS total_sales FROM pizzatable
+WITH table1
+AS
+(
+SELECT
+	city,
+	COUNT(order_id) as nr_of_orders
+FROM foodpanda
+GROUP BY 1
 )
-SELECT pizza_category,
-       ROUND((SUM(total_price) * 100 / total.total_sales)::numeric, 2) AS Percentage
-FROM pizzatable, total
-GROUP BY pizza_category, total.total_sales;
+
+SELECT
+	city,
+	RANK() OVER(ORDER BY nr_of_orders DESC)
+FROM table1
 ```
 
-## 2.Percentage of Sales by Pizza Size
+## 4.Most preferred payment method used by customers
 ```sql
-SELECT pizza_size,
-       ROUND(SUM(total_price)::numeric, 1) AS Total_Sales,
-       ROUND((SUM(total_price) * 100 / (SELECT SUM(total_price) FROM pizzatable))::numeric, 2)
-       AS Percentage
-FROM pizzatable
-GROUP BY pizza_size;
+SELECT
+	payment_method,
+	COUNT(payment_method)
+FROM foodpanda
+GROUP BY 1
+ORDER BY 2 DESC
 ```
 
-## 🏆 Top Performers
-
-## Top 5 Best-Selling Pizzas by revenue, quantity, and total orders:
+## 5.Food category that contributes the most to the total revenue
 ```sql
-SELECT pizza_name,
-       SUM(total_price) AS revenue,
-       SUM(quantity) AS total_quantity,
-       COUNT(DISTINCT order_id) AS total_orders
-FROM pizzatable
-GROUP BY pizza_name
-ORDER BY revenue DESC
-LIMIT 5;
+SELECT
+	category,
+	ROUND(SUM(price)::numeric,2)
+FROM foodpanda
+GROUP BY 1
+ORDER BY 2 DESC
 ```
 
+## 6.Top 5 most popular dishes in the city with the highest sales
+```sql
+WITH table1
+AS
+(
+SELECT
+	city,
+	dish_name,
+	SUM(price) as total_sales
+FROM foodpanda
+GROUP BY 1,2
+)
 
-## 📌 Summary
+SELECT
+	city,
+	dish_name,
+	RANK() OVER(PARTITION BY city ORDER BY total_sales DESC),
+	ROUND(total_sales::numeric,1) AS total_sales_per_dishes
+FROM table1
+ORDER BY 1
+```
 
-This project provides a data-driven overview of pizza sales performance, highlighting:
+## 2.Monthly order volume trend over time
+```sql
+with table1
+AS
+(
+SELECT
+	DATE_TRUNC('month', order_date) AS luna_an,
+	COUNT(*) AS nr_comenzi
+FROM foodpanda
+GROUP BY 1
+)
 
-   -Revenue distribution across categories and sizes
+SELECT
+	luna_an,
+	nr_comenzi,
+	LAG(nr_comenzi) OVER(ORDER BY luna_an) AS an_trecut,
+	(nr_comenzi - LAG(nr_comenzi) OVER(ORDER BY luna_an)) * 100 / LAG(nr_comenzi) OVER(ORDER BY luna_an) AS procentaj
+FROM table1
+```
 
-   -Daily and monthly sales trends
+## Technical Highlights
 
-   -Customer ordering behavior insights (AOV, average pizzas per order)
+--Use of CTEs (WITH clauses`) for modular queries
 
-   -Top-selling products and performance breakdowns
+--Window functions: ROW_NUMBER(), RANK(), DENSE_RANK(), LAG(), NTILE() for ranking, segmentation, and trend analysis
+
+--Aggregations: COUNT, SUM, AVG, ROUND for business KPIs
+
+--Correlation analysis: CORR() to study relationships between variables
+
+--Time-based analysis: DATE_TRUNC, date differences for seasonality, signup-to-first-order lag, and churn calculations
+
+--Advanced segmentation: RFM scoring to classify customers as MVPs, Lost-MVPs, Upcoming MVPs, etc.
+
+--Anomaly detection: identifying outlier customers in terms of order frequency
+
+
+## Insights Generated
+
+Identified top-performing cities, restaurants, and dishes
+
+Measured customer loyalty and churn patterns
+
+Evaluated the relationship between loyalty points and ratings
+
+Analyzed temporal trends in order volumes
+
+Highlighted high-risk customers for potential re-engagement campaigns
+
+Determined restaurants eligible for partnerships based on customer engagement
+
+## This SQL analysis provides a comprehensive foundation for customer analytics, restaurant performance monitoring, and business decision-making for Foodpanda.
 
 ## 🧰 Tech Stack
 
@@ -146,6 +180,7 @@ This project provides a data-driven overview of pizza sales performance, highlig
    LinkedIn: [Connect with me professionally](https://www.linkedin.com/in/birsanlucian1/)
    
    E-Mail: birsan.lucian04@gmail.com
+
 
 
 
