@@ -312,7 +312,7 @@ SELECT
 FROM score
 ORDER BY 5
 
--- 23  Anomaly Detection: Identify "Power Users" whose order frequency is more than 3 standard deviations above the mean.
+-- 22  Anomaly Detection: Identify "Power Users" whose order frequency is more than 3 standard deviations above the mean.
 with table1
 AS
 (
@@ -327,7 +327,7 @@ table2
 AS
 (
 SELECT
-	AVG(table1.order_count) AS avg_freq
+	AVG(table1.order_count) AS avg_freq,
 	STDDEV(order_count) AS std_dev
 FROM table1
 )
@@ -338,7 +338,7 @@ SELECT
 FROM table1,table2
 WHERE order_count > avg_freq + (3 * std_dev)
 
--- 25  Re-engagement Logic: Based on order_frequency and last_order_date, list customers who are "overdue" for an order today.
+-- 23  Re-engagement Logic: Based on order_frequency and last_order_date, list customers who are "overdue" for an order today.
 WITH table1
 AS
 (
@@ -358,7 +358,7 @@ SELECT
 FROM table1
 WHERE (CURRENT_DATE - last_order) > AVG_order_days
 
--- 26  Performance Decay: Identify restaurants that have seen a consistent decline in average ratings over the last 6 months.
+-- 24  Performance Decay: Identify restaurants that have seen a consistent decline in average ratings over the last 6 months.
 -- latest order is 2025-08-22
 WITH table1
 AS
@@ -395,7 +395,7 @@ WHERE avg_rating < last_month_avg
 	last_month_avg IS NOT NULL
 ORDER BY 1,4
 
--- 27  Market Basket Analysis: Identify which categories or dishes are most frequently bought together in the same order_id.
+-- 25  Market Basket Analysis: Identify which categories or dishes are most frequently bought together in the same order_id.
 -- counter starts from 230 to 270 so i think that frequently is more than 250
 SELECT
 	category,
@@ -406,7 +406,7 @@ GROUP BY 1,2
 HAVING COUNT(dish_name) > 250
 ORDER BY 1
 
--- 28  Financial Impact Modeling: Calculate the projected revenue impact if we offered a 10% discount to all customers with a "High" churn risk.
+-- 26  Financial Impact Modeling: Calculate the projected revenue impact if we offered a 10% discount to all customers with a "High" churn risk.
 WITH table1
 AS
 (
@@ -433,14 +433,14 @@ FROM table1
 
 SELECT
 	ChurnSegmentation,
-	SUM(revenue),
+	ROUND(SUM(revenue)::numeric,2),
 	CASE
-	WHEN ChurnSegmentation = 'ChurnRisk' THEN SUM(revenue) - SUM(revenue) * 10/100
-	ELSE SUM(revenue) END AS churndiscount
+	WHEN ChurnSegmentation = 'ChurnRisk' THEN ROUND((SUM(revenue) - SUM(revenue) * 10/100)::numeric,2)
+	ELSE ROUND(SUM(revenue)::numeric,2) END AS churndiscount
 FROM table2
 GROUP BY 1
 
--- 29  Rating Sensitivity: On average, how many days pass between a 1-star rating?\
+-- 27  Rating Sensitivity: On average, how many days pass between a 1-star rating?\
 
 with table1
 AS
@@ -466,7 +466,7 @@ FROm table1
 WHERE last_day IS NOT NULL
 
 
--- 30  Market Gap Analysis: Which cities have the highest customer-to-restaurant ratio, indicating a need for more restaurant partnerships?
+-- 38  Market Gap Analysis: Which cities have the highest customer-to-restaurant ratio, indicating a need for more restaurant partnerships?
 WITH table1
 AS
 (
