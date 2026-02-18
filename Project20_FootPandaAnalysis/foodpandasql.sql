@@ -466,5 +466,22 @@ FROm table1
 WHERE last_day IS NOT NULL
 
 
-SELECT *
+-- 30  Market Gap Analysis: Which cities have the highest customer-to-restaurant ratio, indicating a need for more restaurant partnerships?
+WITH table1
+AS
+(
+SELECT
+	restaurant_name,
+	COUNT(customer_id),
+	ROW_NUMBER() OVER(ORDER BY COUNT(customer_id) DESC) AS ranking
 FROM foodpanda
+GROUP BY 1
+)
+
+SELECT
+	restaurant_name,
+	CASE
+	WHEN ranking <= 2 THEN 'Partnerships-Eligible'
+	ELSE 'Non-Eligible'
+	END AS Partnerships
+FROM table1
