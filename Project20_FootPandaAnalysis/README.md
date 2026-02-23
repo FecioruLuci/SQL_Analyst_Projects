@@ -1,8 +1,3 @@
-## 🍕 Pizza Sales Analysis Project
-
-This project focuses on exploring and analyzing a pizza sales dataset to uncover insights about revenue trends, customer ordering behavior, and product performance. The analysis is performed using SQL to calculate key performance metrics and visualize patterns across categories, sizes, and time periods.
-
----
 
 ## 📊 Data Preparation
 
@@ -172,6 +167,7 @@ FROM table1
    LinkedIn: [Connect with me professionally](https://www.linkedin.com/in/birsanlucian1/)
    
    E-Mail: birsan.lucian04@gmail.com
+
 
 
 
