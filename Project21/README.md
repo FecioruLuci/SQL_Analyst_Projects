@@ -1,164 +1,44 @@
-## 🍕 Pizza Sales Analysis Project
 
-This project focuses on exploring and analyzing a pizza sales dataset to uncover insights about revenue trends, customer ordering behavior, and product performance. The analysis is performed using SQL to calculate key performance metrics and visualize patterns across categories, sizes, and time periods.
+## Overview
 
----
+This project involves designing and querying a relational database for a bookstore. The database consists of three tables — Books, Customers, and Orders — and includes 20 SQL queries that cover a wide range of analysis scenarios.
 
-## 📊 Data Preparation
+## Database Schema
 
-Created a main table named foodpanda, containing detailed data with the following fields:
-
-customer_id, gender, age, city, signup_date, order_id, order_date, restaurant_name, dish_name, category, quantity, price, payment_method, order_frequency, last_order_date, loyalty_points, churned, rating, rating_date, delivery_status, age_int.
-
-Ensured data integrity by defining appropriate data types.
-
-```sql
-CREATE TABLE foodpanda(
-customer_id	VARCHAR(15),
-gender	VARCHAR(15),
-age	VARCHAR(25),
-city	VARCHAR(25),
-signup_date	DATE,
-order_id	VARCHAR(25),
-order_date	DATE,
-restaurant_name	VARCHAR(25),
-dish_name	VARCHAR(25),
-category	VARCHAR(25),
-quantity	INT,
-price	FLOAT,
-payment_method	VARCHAR(25),	
-order_frequency	INT,
-last_order_date	DATE,
-loyalty_points	INT,
-churned	VARCHAR(25),
-rating	INT,
-rating_date	DATE,
-delivery_status	VARCHAR(25),
-age_int INT
-)
-```
+The database is built around three core tables:
+Books — stores information about each book, including title, author, genre, publication year, price, and available stock.
+Customers — contains customer details such as name, email, phone number, city, and country.
+Orders — records each transaction, linking customers to books with details like order date, quantity purchased, and total amount spent.
 
 
-## 🔍 Exploratory Analysis
+## Queries & Analysis
 
-Using SQL queries, several key business metrics were calculated:
+## Basic Filtering & Retrieval
+The first set of queries focuses on simple data retrieval using WHERE clauses. This includes filtering books by genre (Fiction, Fantasy), finding books published after a certain year, listing customers from a specific country (Canada), and showing orders placed within a specific time period (November 2023).
 
-## 1.Total Number of unique orders
+## Aggregations & Summary Statistics
+Several queries calculate summary metrics across the dataset. These include the total stock of all books available, total revenue generated from all orders, and the average price of books within a specific genre. The SUM(), AVG(), and ROUND() functions are used extensively here.
 
-```sql
-SELECT
-	COUNT(DISTINCT(order_date)) AS nr_of_unique_orders
-FROM foodpanda
-```
-## 2.Average price of a dish across all restaurants
-```sql
-SELECT
-	ROUND(AVG(price)::numeric,2) AS avg_price
-FROM foodpanda
-```
+## Ranking & Extremes
+To find specific records like the most expensive book, the book with the lowest stock, or the top 3 most expensive Fantasy books, the project uses both ORDER BY with LIMIT and window functions (RANK() OVER()), showcasing two different approaches to the same type of problem.
 
-## 3.City with the highest volume of orders
-```sql
-WITH table1
-AS
-(
-SELECT
-	city,
-	COUNT(order_id) as nr_of_orders
-FROM foodpanda
-GROUP BY 1
-)
+## JOIN Operations
+A large portion of the queries involve joining multiple tables to enrich the data. LEFT JOIN is used as the primary join type to ensure all records from the primary table are retained even when there's no match — for example, showing all authors and their total sales even if some books haven't been ordered yet. INNER JOIN is used when only matching records are relevant.
 
-SELECT
-	city,
-	RANK() OVER(ORDER BY nr_of_orders DESC)
-FROM table1
-```
+## CTEs (Common Table Expressions)
+Two queries make use of CTEs (WITH clause) to break down complex logic into readable steps. One identifies customers who placed at least 2 orders by first aggregating order counts and then joining back to the orders table to retrieve additional details. The other calculates remaining stock by subtracting total quantities ordered from total book stock, using a CROSS JOIN between the books table and the aggregated CTE.
 
-## 4.Most preferred payment method used by customers
-```sql
-SELECT
-	payment_method,
-	COUNT(payment_method)
-FROM foodpanda
-GROUP BY 1
-ORDER BY 2 DESC
-```
+Key SQL Concepts Used
 
-## 5.Food category that contributes the most to the total revenue
-```sql
-SELECT
-	category,
-	ROUND(SUM(price)::numeric,2)
-FROM foodpanda
-GROUP BY 1
-ORDER BY 2 DESC
-```
-
-## 6.Top 5 most popular dishes in the city with the highest sales
-```sql
-WITH table1
-AS
-(
-SELECT
-	city,
-	dish_name,
-	SUM(price) as total_sales
-FROM foodpanda
-GROUP BY 1,2
-)
-
-SELECT
-	city,
-	dish_name,
-	RANK() OVER(PARTITION BY city ORDER BY total_sales DESC),
-	ROUND(total_sales::numeric,1) AS total_sales_per_dishes
-FROM table1
-ORDER BY 1
-```
-
-## 2.Monthly order volume trend over time
-```sql
-with table1
-AS
-(
-SELECT
-	DATE_TRUNC('month', order_date) AS luna_an,
-	COUNT(*) AS nr_comenzi
-FROM foodpanda
-GROUP BY 1
-)
-
-SELECT
-	luna_an,
-	nr_comenzi,
-	LAG(nr_comenzi) OVER(ORDER BY luna_an) AS an_trecut,
-	(nr_comenzi - LAG(nr_comenzi) OVER(ORDER BY luna_an)) * 100 / LAG(nr_comenzi) OVER(ORDER BY luna_an) AS procentaj
-FROM table1
-```
-
-## Technical Highlights
-
-- **CTEs (`WITH` clauses`)** for modular queries  
-- **Window functions:** `ROW_NUMBER()`, `RANK()`, `DENSE_RANK()`, `LAG()`, `NTILE()` for ranking, segmentation, and trend analysis  
-- **Aggregations:** `COUNT`, `SUM`, `AVG`, `ROUND` for business KPIs  
-- **Correlation analysis:** `CORR()` to study relationships between variables  
-- **Time-based analysis:** `DATE_TRUNC`, date differences for seasonality, signup-to-first-order lag, and churn calculations  
-- **Advanced segmentation:** RFM scoring to classify customers as *MVPs*, *Lost-MVPs*, *Upcoming MVPs*, etc.  
-- **Anomaly detection:** identifying outlier customers in terms of order frequency  
-
----
-
-## Insights Generated
-
-- **Top-performing cities, restaurants, and dishes** identified  
-- **Customer loyalty and churn patterns** measured  
-- **Relationship between loyalty points and ratings** evaluated  
-- **Temporal trends in order volumes** analyzed  
-- **High-risk customers** highlighted for potential re-engagement campaigns  
-- **Restaurants eligible for partnerships** determined based on customer engagement  
-
----
+**DDL: CREATE TABLE, DROP TABLE IF EXISTS
+**Filtering: WHERE, HAVING
+**Aggregation: SUM(), COUNT(), AVG(), ROUND()
+**Joins: LEFT JOIN, INNER JOIN, CROSS JOIN
+**Window Functions: RANK() OVER()
+**CTEs: WITH ... AS
+**Sorting & Limiting: ORDER BY, LIMIT
+**Type casting: ::numeric
+**Deduplication: DISTINCT
 
 ## This SQL analysis provides a comprehensive foundation for customer analytics, restaurant performance monitoring, and business decision-making for Foodpanda.
 
@@ -172,6 +52,7 @@ FROM table1
    LinkedIn: [Connect with me professionally](https://www.linkedin.com/in/birsanlucian1/)
    
    E-Mail: birsan.lucian04@gmail.com
+
 
 
 
