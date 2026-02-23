@@ -147,4 +147,75 @@ FROM orders AS o
 INNER JOIN table1 AS t
 ON o.customer_id = t.customer_id
 
--- 15.
+-- 15.Find the most frequently ordered book
+
+SELECT 
+	o.book_id,
+	b.title,
+	b.author,
+	b.genre,
+	SUM(quantity)
+FROM orders AS o
+LEFT JOIN books AS b
+ON o.book_id = b.book_id
+GROUP BY 1,2,3,4
+ORDER BY 5 DESC
+
+-- 16.Show the top 3 most expensive books of 'Fantasy' Genre
+
+SELECT
+	*
+FROM books
+WHERE genre = 'Fantasy'
+ORDER BY price DESC
+LIMIT 3
+
+-- 17.Retrieve the total quantity of books sold by each author
+
+SELECT
+	author,
+	SUM(o.quantity) AS total_quantity
+FROM books AS b
+LEFT JOIN orders AS o
+ON b.book_id = o.book_id
+GROUP BY 1
+
+-- 18.List the cities where customers who spent over $30 are located
+
+SELECT
+	o.customer_id,
+	o.total_amount,
+	c.city
+FROM orders AS o
+LEFT JOIN customers AS c
+ON o.customer_id = c.customer_id
+WHERE total_amount > 30
+
+-- 19.Find the customer who spent the most on orders
+
+SELECT
+	c.customer_id,
+	c.name,
+	c.email,
+	c.phone,
+	o.total_amount
+FROM customers AS c
+LEFT JOIN orders AS o
+ON c.customer_id = o.customer_id
+WHERE total_amount IS NOT NULL
+ORDER BY 5 DESC
+LIMIT 1
+
+-- 20.Calculate the stock remaining after fulfilling all orders
+WITH table1
+AS
+(
+SELECT 
+	SUM(quantity) AS total_bought
+FROM orders
+)
+
+SELECT
+	SUM(stock)::numeric - total_bought AS total_stock_remaining
+FROM books,table1
+GROUP BY total_bought
