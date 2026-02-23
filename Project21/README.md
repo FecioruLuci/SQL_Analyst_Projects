@@ -30,15 +30,15 @@ Two queries make use of CTEs (WITH clause) to break down complex logic into read
 
 Key SQL Concepts Used
 
-**DDL: CREATE TABLE, DROP TABLE IF EXISTS
-**Filtering: WHERE, HAVING
-**Aggregation: SUM(), COUNT(), AVG(), ROUND()
-**Joins: LEFT JOIN, INNER JOIN, CROSS JOIN
-**Window Functions: RANK() OVER()
-**CTEs: WITH ... AS
-**Sorting & Limiting: ORDER BY, LIMIT
-**Type casting: ::numeric
-**Deduplication: DISTINCT
+- **DDL: CREATE TABLE, DROP TABLE IF EXISTS
+- **Filtering: WHERE, HAVING
+- **Aggregation: SUM(), COUNT(), AVG(), ROUND()
+- **Joins: LEFT JOIN, INNER JOIN, CROSS JOIN
+- **Window Functions: RANK() OVER()
+- **CTEs: WITH ... AS
+- **Sorting & Limiting: ORDER BY, LIMIT
+- **Type casting: ::numeric
+- **Deduplication: DISTINCT
 
 ## This SQL analysis provides a comprehensive foundation for customer analytics, restaurant performance monitoring, and business decision-making for Foodpanda.
 
@@ -52,6 +52,7 @@ Key SQL Concepts Used
    LinkedIn: [Connect with me professionally](https://www.linkedin.com/in/birsanlucian1/)
    
    E-Mail: birsan.lucian04@gmail.com
+
 
 
 
