@@ -232,5 +232,51 @@ SELECT
 FROM phoneanal
 GROUP BY 1
 
+--23. Outlier Detection: Find users whose weekend_screen_time_hours is more than standard deviations plus the mean. 
+-- Are these mostly students or professionals?
+WITH table1
+AS
+(
+SELECT
+	ROUND(STDDEV(weekend_screen_time_hours)::numeric,2) AS deviation,
+	ROUND(AVG(weekend_screen_time_hours)::numeric,2) AS avg_weekend
+FROM phoneanal
+)
+SELECT
+	occupation,
+	COUNT(outlier_segmentation)
+FROM
+(
+SELECT
+	user_id,
+	occupation,
+	weekend_screen_time_hours,
+	CASE
+	WHEN weekend_screen_time_hours > (deviation + avg_weekend) THEN 'High Outlier'
+	WHEN weekend_screen_time_hours < (deviation + avg_weekend) THEN 'Lowe Outlier'
+	ELSE 'Unknown'
+	END AS outlier_segmentation
+FROM phoneanal,table1
+)
+GROUP BY 1
+--they are the same.
 
+-- 24.  Caffeine Compensation: Perform a group-by analysis to see if users with high stress_level and low sleep_hours have 
+-- a higher-than-average caffeine_intake_cups.
+-- avg stress = 5
+-- avg sleep = 6
+SELECT
+	segmentation,
+	AVG(caffeine_intake_cups)
+FROM
+(
+SELECT
+	CASE
+	WHEN stress_level > 5 AND sleep_hours < 6 THEN 'Elligible'
+	ELSE 'Non_Elligible'
+	END AS segmentation,
+	caffeine_intake_cups
+FROM phoneanal
+)
+GROUP BY 1
 
