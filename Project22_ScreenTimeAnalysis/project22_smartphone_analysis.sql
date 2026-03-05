@@ -157,5 +157,80 @@ SELECT
 	WHEN age > 45 THEN app_usage_count END)::numeric,2) AS overr
 FROM phoneanal
 
-SELECT *
+-- 17.  Weekend Surge: Which occupation shows the highest increase in screen time during the weekend compared to weekdays?
+
+SELECT
+	occupation,
+	ROUND(AVG(daily_phone_hours)::numeric,2) AS avg_daily,
+	ROUND(AVG(weekend_screen_time_hours)::numeric,2) AS weekend_hours,
+	ROUND(AVG(weekend_screen_time_hours)::numeric - AVG(daily_phone_hours)::numeric,2) AS screen_time_difference
 FROM phoneanal
+GROUP BY 1
+ORDER BY 4 DESC
+
+-- 18.  Stress by Device: Does stress_level vary significantly between different device_type users?
+
+SELECT
+	device_type,
+	ROUND(AVG(stress_level)::numeric,2) AS avg_stress
+FROM phoneanal
+GROUP BY 1
+-- we get avg stress of 5.50 for ios and 5.51 for android so the stress level doen not vary
+
+-- 19.  The "Doomscrolling" Indicator: Is a high app_usage_count more closely linked to stress_level or social_media_hours?
+-- app usage count = 32.
+SELECT
+	CASE
+	WHEN app_usage_count > 45 THEN 'Very High'
+	ELSE 'High'
+	END AS usage_category,
+	ROUND(AVG(stress_level)::numeric,2) AS avg_stress,
+	ROUND(AVG(social_media_hours)::numeric,2) AS avg_social
+FROM phoneanal
+WHERe app_usage_count > 32
+GROUP BY 1
+-- for both stress and social hours the avg is that same based on app usage count.
+
+-- 20.  Productivity & Sleep: Identify the "Sweet Spot"—what number of sleep_hours is associated with the highest 
+-- average work_productivity_score?
+
+SELECT
+	sleep_hours,
+	ROUND(AVG(work_productivity_score)::numeric,2) AS avg_work_score,
+	COUNT(*)
+FROM phoneanal
+GROUP BY 1
+ORDER BY 2 DESC
+
+-- 21.  The Efficiency Paradox: Identify users who have high daily_phone_hours but still maintain a high work_productivity_score. 
+-- What are their common characteristics (age, occupation, sleep)?
+
+SELECT
+	user_id,
+	age,
+	occupation,
+	sleep_hours,
+	daily_phone_hours,
+	work_productivity_score AS avg_work_score
+FROM phoneanal
+WHERE daily_phone_hours > 5
+AND
+work_productivity_score > 8
+ORDER BY 5 DESC, 6 DESC
+
+-- 22.  User Segmentation: If you were to cluster users into three personas—"Digital Nomads," "Stressed Power Users," 
+-- and "Balanced Users"—what would the boundaries for each group be? 
+
+SELECT
+	CASE 
+	WHEN daily_phone_hours > 6 AND work_productivity_score > 7 THEN 'Digital Nomads'
+	WHEN daily_phone_hours > 6 AND stress_level > 6 THEN 'Stressed Power Users'
+	WHEN daily_phone_hours < 4 AND stress_level < 5 AND sleep_hours > 6 THEN 'Balanced User'
+	ELSE 'Others'
+	END AS user_segmentation,
+	COUNT(*)
+FROM phoneanal
+GROUP BY 1
+
+
+
