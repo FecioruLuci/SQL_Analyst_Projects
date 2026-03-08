@@ -280,3 +280,80 @@ FROM phoneanal
 )
 GROUP BY 1
 
+-- 25.  Predictive Modeling Prep: Which variable (Social Media, Sleep, or Caffeine) is the strongest predictor of stress_level based on a correlation matrix?
+
+SELECT
+	ROUND(CORR(stress_level, social_media_hours)::numeric,3) AS stress_with_social_media,
+	ROUND(CORR(stress_level, sleep_hours)::numeric,3) AS stress_with_sleep,
+	ROUND(CORR(stress_level, caffeine_intake_cups)::numeric,3) AS stress_with_caffeine
+FROM phoneanal
+
+-- Sleep is our current strongest predictior even tho 0.003 is too small as a value to be considered, couldnt be used for a linear prediction.
+
+-- 25. App Intensity: Calculate a new metric: Minutes_Per_App_Open (Total hours * 60 / App usage count). Which occupation has the shortest, most frequent sessions?
+
+SELECT
+	occupation,
+	AVG((daily_phone_hours) * 60.0 / NULLIF(app_usage_count,0)) AS minutes_per_app_open
+FROM phoneanal
+GROUP BY 1
+ORDER BY minutes_per_app_open
+
+-- 27.  The "Burnout" Risk Score: Create a weighted formula for a "Burnout Risk Score" using stress_level, sleep_hours (inverted), and daily_phone_hours. 
+-- Who ranks in the top 5%?
+WITH table1
+AS
+(
+SELECT
+	*,
+	(stress_level * 2.0) + ((10 - sleep_hours) * 1.5) + (daily_phone_hours * 1.0) AS burnout_score
+FROM phoneanal
+),
+table2
+AS
+(
+SELECT
+	*,
+	PERCENT_RANK() OVER(ORDER BY burnout_score DESC) AS risk_percentile
+FROM table1
+)
+
+SELECT
+	*
+FROm table2
+WHERE risk_percentile <= 0.05
+ORDER BY burnout_score DESC
+
+-- 28.  Demographic Deep Dive: Within the highest stress category, what is the most prevalent occupation and age range?
+with table1
+AS
+(
+SELECT *,
+	CASE
+	WHEN stress_level < 4 THEN 'Low Stress'
+	WHEN stress_level > 4 AND stress_level < 7 THEN 'Medium Stress'
+	ELSE 'High Stress'
+	END AS stress_category,
+	CASE
+	WHEN age < 28 THEN 'Young'
+	WHEN age > 28 AND age < 45 THEN 'Adult'
+	ELSE 'Old'
+	END AS age_category
+FROM phoneanal
+)
+
+SELECT 
+	occupation,
+	stress_category,
+	age_category,
+	ROUND(AVG(age)) AS avg_age,
+	COUNT(stress_category) AS counter
+FROM table1
+WHERE stress_category = 'High Stress'
+GROUP BY 1,2,3
+ORDER BY 5 DESC
+
+-- 29.  Non-Linear Trends: Does work_productivity_score peak at a certain level of caffeine_intake_cups and then decline? (The "Inverted-U" theory).
+
+SELECT *
+FROM phoneanal
