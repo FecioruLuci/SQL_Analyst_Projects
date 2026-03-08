@@ -355,5 +355,22 @@ ORDER BY 5 DESC
 
 -- 29.  Non-Linear Trends: Does work_productivity_score peak at a certain level of caffeine_intake_cups and then decline? (The "Inverted-U" theory).
 
+SELECT
+	CASE
+	WHEN caffeine_intake_cups = 0 THEN 'None'
+	WHEN caffeine_intake_cups <= 2 THEN 'Low caffeine'
+	WHEN caffeine_intake_cups > 2 ANd caffeine_intake_cups <= 4 THEN 'Moderate Caffeine'
+	ELSE 'High caffeine'
+	END AS caffeine_segmentation,
+	ROUND(AVG(work_productivity_score)::numeric,2) AS avg_work_score,
+	COUNT(*)
+FROM phoneanal
+GROUP BY 1
+-- the values are too close to say that there is a decline
+
+-- 30. Data Integrity: Identify any "impossible" users (e.g., those whose daily_phone_hours + sleep_hours + work_hours (est) exceed 24 hours).
+
 SELECT *
 FROM phoneanal
+WHERE (daily_phone_hours + sleep_hours + 8) > 24
+-- i dont have work_hours so i assume everybody works 8 hours/day
