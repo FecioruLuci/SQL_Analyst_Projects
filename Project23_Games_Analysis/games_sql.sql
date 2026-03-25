@@ -104,3 +104,120 @@ FROM games
 WHERE genre = 'Action' AND release_date > '01/01/2015'
 ORDER BY 3 ASC
 
+-- 11  Platform Analysis: Calculate the average critic_score for each console. Which one has the highest?
+
+SELECT
+	console,
+	ROUND(AVG(critic_score)::numeric,2) AS avg_score
+FROM games
+WHERE critic_score IS NOT NULL
+GROUP BY 1
+ORDER BY 2 DESC
+
+-- 12  Genre Popularity: Which genre has generated the most total_sales globally?
+
+SELECT
+	genre,
+	ROUND(SUM(total_sales)::numeric,2) AS total_sales_per_genre
+FROM games
+WHERE total_sales != 0
+GROUP BY 1
+ORDER BY 2 DESC
+
+-- 13  Regional Dominance: For each game, calculate what percentage of total_sales comes from na_sales.
+WITH table1
+AS
+(
+SELECT
+	title,
+	SUM(total_sales) as total_saless,
+	SUM(na_sales) AS total_na_sales
+FROM games
+WHERE total_sales != 0 AND
+	na_sales != 0
+GROUP BY 1
+)
+
+SELECT
+	t1.title,
+	ROUND(((total_saless - total_na_sales) / total_saless * 100)::numeric,2) AS percentage
+FROM table1 AS t1
+ORDER BY 2 DESC
+
+-- 14  Publisher Volume: Identify publishers who have released more than 50 games.
+
+SELECT
+	publisher,
+	COUNT(title) AS nr_of_released_games
+FROM games
+GROUP BY 1
+HAVING COUNT(title) > 50
+
+-- 15  Yearly Trends: Group the data by year (from release_date) and show the total games released each year.
+
+SELECT
+	EXTRACT(YEAR FROM release_date) AS yearr,
+	COUNT(DISTINCT title) AS games_released
+FROM games
+WHERE release_date IS NOT NULL
+GROUP BY 1
+
+-- 16  Update Latency: Calculate the average number of days between the release_date and the last_update.
+with table1
+AS
+(
+SELECT
+	last_update - release_date AS days_diff
+FROM games
+WHERE last_update IS NOT NULL AND
+	release_date IS NOT NULL
+)
+
+SELECT
+	ROUND(AVG(days_diff)::numeric) AS avg_days
+FROM table1
+
+-- 17  High Stakes: Find the developer with the highest average total_sales (minimum 5 games released).
+
+SELECT
+	developer,
+	ROUND(AVG(total_sales)::numeric,2) AS avg_total_sales
+FROM games
+WHERE total_sales IS NOT NULL
+GROUP BY 1
+HAVING COUNT(DISTINCT title) >= 5
+ORDER BY 2 DESC
+
+-- 18  Comparison: List games where pal_sales (Europe) are higher than na_sales (North America).
+
+SELECT
+	title,
+	pal_sales,
+	na_sales
+FROM games
+WHERE pal_sales > na_sales AND
+	pal_sales IS NOT NULL AND
+	na_sales IS NOT NULL
+
+-- 19  Categorization: Use a CASE statement to label games as 'High Scored' (score > 8.0) or 'Low Scored' (score <= 8.0).
+
+SELECT
+	*,
+	CASE
+	WHEN critic_score > 8.0 THEN 'High Scored'
+	WHEN critic_score <= 8.0 THEN 'Low Scored'
+	ELSE 'No score'
+	END AS segmentation
+FROM games
+
+-- 20  Market Share: Find the top 3 publishers in terms of total jp_sales.
+SELECT *
+FROM
+(
+SELECT
+	publisher,
+	jp_sales,
+	DENSE_RANK() OVER(ORDER BY jp_sales DESC) AS ranking
+FROM games
+)
+WHERE ranking <= 3
