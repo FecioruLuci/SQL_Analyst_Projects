@@ -225,3 +225,102 @@ WHERE w.product_line = t.product_line
 
 SELECT *
 FROm walsales
+
+-- What is the most common product line by gender
+
+SELECT
+	product_line,
+	COUNT(gender) AS ctr
+FROm walsales
+GROUP BY 1
+ORDER BY 2 DESC
+
+-- What is the average rating of each product line?
+
+SELECT
+	product_line,
+	ROUND(AVG(rating)::numeric,1) AS avg_rating
+FROM walsales
+GROUP BY 1
+
+-- Number of sales made in each time of the day per weekday
+
+SELECT
+	time_category,
+	day_name,
+	COUNT(*) AS counter
+FROM walsales
+GROUP BY 1,2
+ORDER BY 2
+
+-- Which of the customer type brings revenue?
+
+SELECT
+	customer_type,
+	ROUND(SUM(total)::numeric,2) AS total_rev
+FROM walsales
+GROUP BY 1
+ORDER BY 2 DESC
+
+-- Which city has the largest tax percent/VAT
+
+SELECT
+	city,
+	ROUND(AVG(tax_5_perc)::numeric,1) AS tax_perc
+FROM walsales
+GROUP BY 1
+ORDER BY 2 DESC
+
+-- Which customer type pays the most VAT?
+
+SELECT
+	customer_type,
+	AVG(tax_5_perc) AS ag_VAT
+FROM walsales
+GROUP BY 1
+ORDER BY 2 DESC
+
+-- How many unique customer types does the data have?
+
+SELECT
+	COUNT(DISTINCT(customer_type)) AS nr_of_unique_cust
+FROM walsales
+
+-- How many unique payment types does that data have?
+
+SELECT
+	COUNT(DISTINCT(payment))
+FROM walsales
+
+-- What is the most common customer type?
+
+SELECT
+	customer_type,
+	COUNT(customer_type) AS ctn
+FROM walsales
+GROUP BY 1
+ORDER BY 2 DESC
+
+-- Which customer type buys the most?
+
+SELECT
+	customer_type,
+	SUM(quantity) AS qty_ctr
+FROM walsales
+GROUP BY 1
+ORDER BY 2 DESC
+
+-- What is the gender of most of the customers?
+
+SELECT
+	customer_type,
+	gender,
+	COUNT(*) as counter,
+	ROUND(COUNT(*) * 100 / SUM(COUNT(*)) OVER(PARTITION BY customer_type)::numeric,2)
+FROM walsales
+GROUP BY 1,2
+
+SELECT *
+FROM walsales
+
+
