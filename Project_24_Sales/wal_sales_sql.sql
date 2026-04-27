@@ -323,4 +323,50 @@ GROUP BY 1,2
 SELECT *
 FROM walsales
 
+-- What is the gender distribution per branch?
 
+SELECT
+	branch,
+	gender,
+	COUNT(gender)
+FROM walsales
+GROUP BY 1,2
+ORDER BY 1
+
+-- Which time of the day do customers give the most ratings?
+
+SELECT
+	time_category,
+	COUNT(rating) AS ctr
+FROM walsales
+GROUP BY 1
+ORDER BY 2 DESC
+
+-- Which time of the day do customers give most rating per branch
+
+SELECT
+	time_category,
+	branch,
+	COUNT(rating) AS ctr
+FROM walsales
+GROUP BY 1,2
+ORDER BY 3 DESC
+
+-- Which day of the week has the best avg ratings?
+
+SELECT
+	day_name,
+	ROUND(AVG(rating)::numeric,2) AS avg_rating
+FROM walsales
+GROUP BY 1
+ORDER BY 2 DESC
+
+-- Which day of the week has the best average ratings per branch?
+
+SELECT
+	day_name,
+	branch,
+	ROUND(AVG(rating)::numeric,2) AS avg_ratings
+FROM walsales
+GROUP BY 1,2
+ORDER BY 3 DESC
